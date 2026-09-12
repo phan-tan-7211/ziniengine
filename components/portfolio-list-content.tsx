@@ -3,9 +3,9 @@
 import { useMemo, useRef, useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { ArrowRight, Eye } from "lucide-react"
-import Link from "next/link"
 import Image from "next/image"
 import { FallbackBadge } from "./fallback-badge"
+import { SmartPrefetchLink } from "./smart-prefetch-link"
 
 interface ThongTinDanhMuc { _id: string; title: string }
 interface ThongTinDuAn { _id: string; title: string; client?: string; description?: string; slug: string; language: string; image?: { url: string }; categoryIdentifier?: string }
@@ -75,7 +75,7 @@ export function PortfolioListContent({ projects, categories, lang, dict }: Portf
         <AnimatePresence mode="popLayout">
           {filteredProjects.map((project) => (
             <motion.div key={project._id} layout initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.97, y: 14 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: 10 }} transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.28 }} className="h-full">
-              <Link href={`/${lang}/portfolio/${project.slug}`} aria-label={`${dict.common?.read_more}: ${project.title}`} className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-border/60 bg-card shadow-soft transition-all duration-300 lg:hover:-translate-y-2 lg:hover:scale-[1.01] lg:hover:border-primary/40 lg:hover:shadow-card">
+              <SmartPrefetchLink href={`/${lang}/portfolio/${project.slug}`} aria-label={`${dict.common?.read_more}: ${project.title}`} className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-border/60 bg-card shadow-soft transition-all duration-300 lg:hover:-translate-y-2 lg:hover:scale-[1.01] lg:hover:border-primary/40 lg:hover:shadow-card">
                 <div className="relative aspect-[4/3] overflow-hidden bg-muted/30">
                   <Image src={project.image?.url || "/placeholder.svg"} alt={project.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw" className="object-cover transition-transform duration-700 lg:group-hover:scale-110" />
                   <div className="absolute left-3 top-3 z-20"><FallbackBadge ngonNguThucTe={project.language} ngonNguNguoiDung={lang} /></div>
@@ -86,7 +86,7 @@ export function PortfolioListContent({ projects, categories, lang, dict }: Portf
                   <p className="mt-2 line-clamp-3 flex-1 text-sm leading-6 text-muted-foreground">{project.description || "—"}</p>
                   <div className="mt-5 flex items-center justify-between border-t border-border/50 pt-4"><span className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary">{dict.common?.read_more}<ArrowRight className="size-4" aria-hidden="true" /></span><Eye className="size-4 text-muted-foreground/60" aria-hidden="true" /></div>
                 </div>
-              </Link>
+              </SmartPrefetchLink>
             </motion.div>
           ))}
         </AnimatePresence>

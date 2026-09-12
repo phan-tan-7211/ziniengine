@@ -1,5 +1,4 @@
 import { HeroSection } from "@/components/hero-section"
-import { Footer } from "@/components/footer"
 import { BlueprintBackground } from "@/components/blueprint-background"
 import { FeaturedProjects } from "@/components/featured-projects"
 import { AboutSummary } from "@/components/about-summary"
@@ -75,7 +74,7 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
   const contactPoint = siteSettings.phoneTel || siteSettings.email ? { "@type": "ContactPoint", ...(siteSettings.phoneTel ? { telephone: siteSettings.phoneTel } : {}), ...(siteSettings.email ? { email: siteSettings.email } : {}), contactType: "customer service", availableLanguage: ["Vietnamese", "English", "Japanese", "Korean", "Chinese"] } : undefined
   const jsonLd = { "@context": "https://schema.org", "@type": ["Organization", "LocalBusiness"], name: siteName, url: `${siteUrl}/${lang}`, image: `${siteUrl}/og-image.jpg`, description: typeof dictionary.hero?.description === "string" ? dictionary.hero.description.replace(/<[^>]*>?/gm, "") : undefined, ...(siteSettings.addressDisplay ? { address: { "@type": "PostalAddress", streetAddress: siteSettings.addressDisplay, addressCountry: "VN" } } : {}), ...(contactPoint ? { contactPoint } : {}), ...(sameAs.length > 0 ? { sameAs } : {}) }
 
-  return <>
+  return (
     <main id="main-content" className="relative min-h-dvh overflow-x-clip bg-background text-foreground">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="pointer-events-none absolute inset-0 z-0 opacity-30" aria-hidden="true"><BlueprintBackground /></div>
@@ -100,6 +99,5 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
         </section>
       </div>
     </main>
-    <Footer lang={lang} dict={dictionary} />
-  </>
+  )
 }

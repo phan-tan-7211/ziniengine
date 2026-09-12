@@ -1,4 +1,3 @@
-import { Footer } from "@/components/footer"
 import { BlueprintBackground } from "@/components/blueprint-background"
 import { AboutSection } from "@/components/about-section"
 import { TestimonialsSection } from "@/components/testimonials-section"
@@ -73,7 +72,6 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
         <AboutSection lang={lang} dict={dict} siteName={siteName} />
         <TestimonialsSection lang={lang} dict={dict} />
       </div>
-      <Footer lang={lang} dict={dict} />
     </main>
   )
 }

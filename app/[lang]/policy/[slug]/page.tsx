@@ -3,7 +3,6 @@ import { getDictionary } from "@/lib/get-dictionary"
 import { PortableText } from "@portabletext/react"
 import { Clock, ShieldCheck } from "lucide-react"
 import { NutQuayLai } from "@/components/nut-quay-lai"
-import { Footer } from "@/components/footer"
 import { getSiteName, withSiteName } from "@/lib/site-settings"
 import { sanityClient } from "@/lib/sanity-client"
 
@@ -122,8 +121,6 @@ export default async function PolicyPage({ params }: { params: Promise<{ lang: s
           </div>
         </article>
       </div>
-
-      <Footer lang={lang} dict={dict} />
     </main>
   )
 }
