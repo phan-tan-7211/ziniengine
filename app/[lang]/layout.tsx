@@ -6,28 +6,11 @@ import { MobileWidgetIndicator } from "@/components/mobile-widget-indicator"
 import { FloatingContactBar } from "@/components/floating-contact-bar"
 import { Footer } from "@/components/footer"
 import { SiteSettingsProvider } from "@/components/site-settings-context"
-import { getDictionary } from "@/lib/get-dictionary"
+import { getDictionary } from "@/lib/get-dictionary-cached"
 import { getSiteSettings, resolveSiteName } from "@/lib/site-settings"
 import { getPublicSiteUrl } from "@/lib/runtime-config"
 import { sanityClient } from "@/lib/sanity-client"
-
-async function getLocalizedServices(lang: string) {
-  const items: any[] = await sanityClient.fetch(`
-    *[_type == "service" && defined(slug.current) && !(_id in path("drafts.**"))] | order(orderRank asc) {
-      _id, _translationKey, "slug": slug.current, icon, language, title, "desc": description, orderRank
-    }
-  `)
-  const groups: Record<string, any[]> = {}
-  items.forEach((item: any) => {
-    const key = item._translationKey || item._id
-    if (!groups[key]) groups[key] = []
-    groups[key].push(item)
-  })
-  return Object.values(groups)
-    .map((group: any[]) => group.find((item) => item.language === lang) || group.find((item) => item.language === "en") || group.find((item) => item.language === "vi") || group[0])
-    .sort((a, b) => (a.orderRank || 0) - (b.orderRank || 0))
-    .map((service) => ({ _id: service._id, slug: service.slug, icon: service.icon, language: service.language, title: service.title, desc: service.desc }))
-}
+import { getLocalizedServiceCatalog } from "@/lib/service-catalog"
 
 async function getSharedLayoutData(lang: string) {
   const data = await sanityClient.fetch<any>(
@@ -91,7 +74,7 @@ export default async function LanguageLayout({ children, params }: { children: R
   const { lang } = await params
   const [dict, services, siteSettings, sharedData] = await Promise.all([
     getDictionary(lang),
-    getLocalizedServices(lang),
+    getLocalizedServiceCatalog(lang),
     getSiteSettings(),
     getSharedLayoutData(lang),
   ])

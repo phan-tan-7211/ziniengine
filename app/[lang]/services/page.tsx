@@ -1,28 +1,10 @@
 import { BlueprintBackground } from "@/components/blueprint-background"
 import { PageHeader } from "@/components/page-header"
 import { ServiceListContent } from "@/components/service-list-content"
-import { getDictionary } from "@/lib/get-dictionary"
+import { getDictionary } from "@/lib/get-dictionary-cached"
 import { getSiteName, withSiteName } from "@/lib/site-settings"
 import { getPublicSiteUrl } from "@/lib/runtime-config"
-import { sanityClient } from "@/lib/sanity-client"
-
-async function layDanhSachDichVu(lang: string) {
-  const allServices: any[] = await sanityClient.fetch(`
-    *[_type == "service" && defined(slug.current) && !(_id in path("drafts.**"))] | order(orderRank asc) {
-      _id,_translationKey,title,description,"slug":slug.current,language,icon,orderRank,"tags":coalesce(tags,[])
-    }
-  `)
-  const groups: Record<string, any[]> = {}
-  allServices.forEach((service) => {
-    const key = service._translationKey || service._id
-    if (!groups[key]) groups[key] = []
-    groups[key].push(service)
-  })
-  return Object.values(groups)
-    .map((group) => group.find((item) => item.language === lang) || group.find((item) => item.language === "en") || group.find((item) => item.language === "vi") || group[0])
-    .filter(Boolean)
-    .sort((a,b)=>(a.orderRank||0)-(b.orderRank||0))
-}
+import { getLocalizedServiceCatalog } from "@/lib/service-catalog"
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
@@ -34,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function ServicesHubPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
-  const [dict, services, siteName] = await Promise.all([getDictionary(lang), layDanhSachDichVu(lang), getSiteName()])
+  const [dict, services, siteName] = await Promise.all([getDictionary(lang), getLocalizedServiceCatalog(lang), getSiteName()])
   const siteUrl = getPublicSiteUrl()
   const titleMain = dict.services?.title_main || dict.navigation?.services || "Services"
   const titleHighlight = dict.services?.title_highlight || ""

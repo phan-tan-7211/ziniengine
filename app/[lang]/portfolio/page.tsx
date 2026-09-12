@@ -1,23 +1,20 @@
 import { BlueprintBackground } from "@/components/blueprint-background"
 import { PortfolioListContent } from "@/components/portfolio-list-content"
 import { PageHeader } from "@/components/page-header"
-import { getDictionary } from "@/lib/get-dictionary"
+import { getDictionary } from "@/lib/get-dictionary-cached"
 import { getSiteName, withSiteName } from "@/lib/site-settings"
 import { sanityClient } from "@/lib/sanity-client"
 import { getPublicSiteUrl } from "@/lib/runtime-config"
+import { getPortfolioServiceCategories } from "@/lib/service-catalog"
 
 async function layDuLieuPortfolio(lang: string) {
   const projectQuery = `*[_type == "project" && defined(slug.current) && !(_id in path("drafts.**"))] { _id,_translationKey,title,client,description,"slug":slug.current,language,"image":mainImage.asset->{url},"categoryIdentifier":coalesce(serviceCategory->_translationKey,serviceCategory->_id) }`
-  const categoryQuery = `*[_type == "service" && defined(slug.current) && !(_id in path("drafts.**"))] | order(orderRank asc) { _id,_translationKey,language,title,orderRank }`
-  const [rawProjects,rawCategories]=await Promise.all([sanityClient.fetch(projectQuery),sanityClient.fetch(categoryQuery)])
+  const [rawProjects,categories]=await Promise.all([sanityClient.fetch(projectQuery),getPortfolioServiceCategories(lang)])
 
   const projectGroups:Record<string,any[]>={}
   rawProjects.forEach((project:any)=>{const key=project._translationKey||project._id;if(!projectGroups[key])projectGroups[key]=[];projectGroups[key].push(project)})
   const projects=Object.values(projectGroups).map((group:any[])=>group.find((item)=>item.language===lang)||group.find((item)=>item.language==="en")||group.find((item)=>item.language==="vi")||group[0])
 
-  const categoryGroups:Record<string,any[]>={}
-  rawCategories.forEach((category:any)=>{const key=category._translationKey||category._id;if(!categoryGroups[key])categoryGroups[key]=[];categoryGroups[key].push(category)})
-  const categories=Object.entries(categoryGroups).map(([key,group])=>{const selected=group.find((item)=>item.language===lang)||group.find((item)=>item.language==="en")||group.find((item)=>item.language==="vi")||group[0];return selected?{_id:key,title:selected.title,orderRank:selected.orderRank||0}:null}).filter(Boolean).sort((a:any,b:any)=>a.orderRank-b.orderRank)
   return {projects,categories}
 }
 

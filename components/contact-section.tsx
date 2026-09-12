@@ -82,30 +82,27 @@ const kindLabels: Record<LocaleKey, Record<string, string>> = {
 export function ContactSection({ dict, lang = "vi" }: { dict: any; lang?: string }) {
   const locale = (["vi", "en", "jp", "kr", "cn"].includes(lang) ? lang : "vi") as LocaleKey
   const t = dict?.contact_section || {}
-  const { phoneDisplay, phoneTel, email } = useSiteSettings()
+  const { phoneDisplay, phoneTel, email, sharedLocations = [] } = useSiteSettings()
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-100px" })
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [settings, setSettings] = useState<ContactSettings | null>(null)
-  const [locations, setLocations] = useState<CompanyLocation[]>([])
   const [formData, setFormData] = useState({ name: "", company: "", email: "", phone: "", service: "", message: "", file: null as File | null })
 
   useEffect(() => {
     let active = true
-    Promise.all([
-      sanityCdnClient.fetch<ContactSettings | null>(`*[_type == "contactSettings" && _id == "contactSettings" && !(_id in path("drafts.**"))][0]{enabled,badge,title,titleHighlight,description,workingHoursTitle,workingHours[]{_key,enabled,label,value,accent},form}`),
-      sanityCdnClient.fetch<{ locations?: CompanyLocation[] } | null>(`*[_type == "locationsSettings" && _id == "locationsSettings" && !(_id in path("drafts.**"))][0]{locations[]{_key,enabled,kind,name,address,googleMapsUrl}}`),
-    ]).then(([contactData, locationData]) => {
-      if (!active) return
-      setSettings(contactData || {})
-      setLocations((locationData?.locations || []).filter((item) => item.enabled !== false && item.address?.trim()))
-    }).catch((error) => {
-      console.error("Sanity contact settings:", error)
-      if (!active) return
-      setSettings({})
-      setLocations([])
-    })
+    sanityCdnClient
+      .fetch<ContactSettings | null>(`*[_type == "contactSettings" && _id == "contactSettings" && !(_id in path("drafts.**"))][0]{enabled,badge,title,titleHighlight,description,workingHoursTitle,workingHours[]{_key,enabled,label,value,accent},form}`)
+      .then((contactData) => {
+        if (!active) return
+        setSettings(contactData || {})
+      })
+      .catch((error) => {
+        console.error("Sanity contact settings:", error)
+        if (!active) return
+        setSettings({})
+      })
     return () => { active = false }
   }, [])
 
@@ -147,7 +144,7 @@ export function ContactSection({ dict, lang = "vi" }: { dict: any; lang?: string
     { _key: "sunday", label: { [locale]: t?.working_hours?.sunday || "Sunday" }, value: { [locale]: t?.working_hours?.closed || "Closed" }, accent: true },
   ]
   const workingHours = (settings?.workingHours?.length ? settings.workingHours : fallbackHours).filter((row) => row.enabled !== false && (row.value?.common || row.value?.[locale]))
-  const visibleLocations = locations.length ? locations : (t?.offices || []).map((office: any, index: number) => ({ _key: `fallback-${index}`, enabled: true, kind: index === 0 ? "factory" : "office", name: { [locale]: office.name }, address: office.address }))
+  const visibleLocations: CompanyLocation[] = sharedLocations.length ? sharedLocations : (t?.offices || []).map((office: any, index: number) => ({ _key: `fallback-${index}`, enabled: true, kind: index === 0 ? "factory" : "office", name: { [locale]: office.name }, address: office.address }))
 
   const update = (name: string, value: string) => setFormData((prev) => ({ ...prev, [name]: value }))
   const handleSubmit = async (event: React.FormEvent) => {

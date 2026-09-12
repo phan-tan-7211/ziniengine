@@ -58,14 +58,32 @@ let socialProofPromise: Promise<[ReviewSettings, ReviewSettings, TrustedCompanie
 let socialProofCachedAt = 0
 const SOCIAL_PROOF_TTL = 5 * 60 * 1000
 
+function hasCompleteModernReviewData(data?: ReviewSettings | null) {
+  return Boolean(
+    data &&
+    typeof data.googleRating === "number" &&
+    typeof data.googleReviewCount === "number" &&
+    data.googleMapsUrl &&
+    Array.isArray(data.googleReviews) &&
+    data.googleReviews.length > 0
+  )
+}
+
 function loadSocialProof() {
   if (!socialProofPromise || Date.now() - socialProofCachedAt > SOCIAL_PROOF_TTL) {
     socialProofCachedAt = Date.now()
-    socialProofPromise = Promise.all([
-      sanityCdnClient.fetch<ReviewSettings>(`*[_type == "googleReviewsSettings" && _id == "googleReviewsSettings" && !(_id in path("drafts.**"))][0]{enabled,badge,titlePart1,titleHighlight,description,reviewsLabel,viewGoogleLabel,googleRating,googleReviewCount,googleMapsUrl,googleReviews[]{_key,author,rating,content,meta,reviewUrl}}`),
-      sanityCdnClient.fetch<ReviewSettings>(`*[_type == "siteSettings" && !(_id in path("drafts.**"))][0]{googleRating,googleReviewCount,googleMapsUrl,googleReviews[]{_key,author,rating,content,meta,reviewUrl}}`),
-      sanityCdnClient.fetch<TrustedCompaniesSettings>(`*[_type == "trustedCompanies" && _id == "trustedCompanies" && !(_id in path("drafts.**"))][0]{enabled,heading,companies[]{_key,name,url,enabled}}`),
-    ]).catch((error) => {
+    socialProofPromise = (async () => {
+      const [newReviewData, trustedData] = await Promise.all([
+        sanityCdnClient.fetch<ReviewSettings>(`*[_type == "googleReviewsSettings" && _id == "googleReviewsSettings" && !(_id in path("drafts.**"))][0]{enabled,badge,titlePart1,titleHighlight,description,reviewsLabel,viewGoogleLabel,googleRating,googleReviewCount,googleMapsUrl,googleReviews[]{_key,author,rating,content,meta,reviewUrl}}`),
+        sanityCdnClient.fetch<TrustedCompaniesSettings>(`*[_type == "trustedCompanies" && _id == "trustedCompanies" && !(_id in path("drafts.**"))][0]{enabled,heading,companies[]{_key,name,url,enabled}}`),
+      ])
+
+      const legacyReviewData = hasCompleteModernReviewData(newReviewData)
+        ? {}
+        : await sanityCdnClient.fetch<ReviewSettings>(`*[_type == "siteSettings" && !(_id in path("drafts.**"))][0]{googleRating,googleReviewCount,googleMapsUrl,googleReviews[]{_key,author,rating,content,meta,reviewUrl}}`)
+
+      return [newReviewData || {}, legacyReviewData || {}, trustedData || {}] as [ReviewSettings, ReviewSettings, TrustedCompaniesSettings]
+    })().catch((error) => {
       socialProofPromise = null
       throw error
     })
