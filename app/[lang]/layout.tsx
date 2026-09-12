@@ -12,12 +12,18 @@ import { sanityClient } from "@/lib/sanity-client"
 
 async function getLocalizedServices(lang: string) {
   const items: any[] = await sanityClient.fetch(`
-    *[_type == "service" && language == $lang && defined(slug.current) && !(_id in path("drafts.**"))] | order(orderRank asc) {
+    *[_type == "service" && defined(slug.current) && !(_id in path("drafts.**"))] | order(orderRank asc) {
       _id, _translationKey, "slug": slug.current, icon, language, title, "desc": description, orderRank
     }
-  `, { lang })
-
-  return items
+  `)
+  const groups: Record<string, any[]> = {}
+  items.forEach((item: any) => {
+    const key = item._translationKey || item._id
+    if (!groups[key]) groups[key] = []
+    groups[key].push(item)
+  })
+  return Object.values(groups)
+    .map((group: any[]) => group.find((item) => item.language === lang) || group.find((item) => item.language === 'en') || group.find((item) => item.language === 'vi') || group[0])
     .sort((a, b) => (a.orderRank || 0) - (b.orderRank || 0))
     .map((service) => ({ slug: service.slug, icon: service.icon, language: service.language, title: service.title, desc: service.desc }))
 }
