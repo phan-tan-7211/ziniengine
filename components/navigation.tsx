@@ -4,11 +4,11 @@ import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { motion, useReducedMotion } from "framer-motion"
+import { Briefcase, FileText, Home, Info, Package, Phone, Settings } from "lucide-react"
 import { DesktopNavigation } from "./navigation-desktop"
 import { MobileNavigation } from "./navigation-mobile"
 import { SiteLogoMark, SiteLogoWordmark } from "./site-logo"
 import { cn } from "@/lib/utils"
-import * as LucideIcons from "lucide-react"
 
 interface ServiceMenuItem {
   icon?: any
@@ -194,7 +194,7 @@ export function Navigation({ lang, dict, initialServices = [] }: NavigationProps
           >
             {menuItems.map((item, index) => {
               const active = pathname === item.href || (item.href !== `/${lang}` && pathname.startsWith(item.href))
-              const Icon = item.name === dict.navigation.home ? LucideIcons.Home : item.name === dict.navigation.about ? LucideIcons.Info : item.name === dict.navigation.services ? LucideIcons.Settings : item.name === dict.navigation.products ? LucideIcons.Package : item.name === dict.navigation.projects ? LucideIcons.Briefcase : item.name === dict.navigation.blog ? LucideIcons.FileText : LucideIcons.Phone
+              const Icon = item.name === dict.navigation.home ? Home : item.name === dict.navigation.about ? Info : item.name === dict.navigation.services ? Settings : item.name === dict.navigation.products ? Package : item.name === dict.navigation.projects ? Briefcase : item.name === dict.navigation.blog ? FileText : Phone
 
               return (
                 <button
