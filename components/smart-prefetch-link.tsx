@@ -3,11 +3,13 @@
 import Link from "next/link"
 import type { ComponentProps, FocusEvent, MouseEvent, PointerEvent } from "react"
 import { useEffect, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
-const prefetchedUrls = new Set<string>()
+const prefetchedAt = new Map<string, number>()
+const PREFETCH_TTL_MS = 5 * 60 * 1000
+const MAX_VIEWPORT_PREFETCH_PER_PAGE = 8
+let budgetPathname = ""
 let viewportPrefetchCount = 0
-const MAX_VIEWPORT_PREFETCH = 8
 
 type SmartPrefetchLinkProps = ComponentProps<typeof Link> & {
   intentDelayMs?: number
@@ -27,6 +29,25 @@ function shouldPrefetch() {
   return true
 }
 
+function isFreshPrefetch(href: string) {
+  const timestamp = prefetchedAt.get(href)
+  if (!timestamp) return false
+  if (Date.now() - timestamp <= PREFETCH_TTL_MS) return true
+  prefetchedAt.delete(href)
+  return false
+}
+
+function claimViewportBudget(pathname: string) {
+  if (budgetPathname !== pathname) {
+    budgetPathname = pathname
+    viewportPrefetchCount = 0
+  }
+
+  if (viewportPrefetchCount >= MAX_VIEWPORT_PREFETCH_PER_PAGE) return false
+  viewportPrefetchCount += 1
+  return true
+}
+
 export function SmartPrefetchLink({
   href,
   intentDelayMs = 70,
@@ -35,24 +56,29 @@ export function SmartPrefetchLink({
   onMouseLeave,
   onFocus,
   onPointerDown,
-  prefetch = true,
+  prefetch = false,
   ...props
 }: SmartPrefetchLinkProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const anchorRef = useRef<HTMLAnchorElement | null>(null)
   const hrefString = typeof href === "string" ? href : href.pathname || ""
+  const eagerPrefetch = prefetch === true
 
   const prefetchNow = () => {
-    if (!hrefString || !shouldPrefetch() || prefetchedUrls.has(hrefString)) return
-    prefetchedUrls.add(hrefString)
+    if (!hrefString.startsWith("/") || !shouldPrefetch() || isFreshPrefetch(hrefString)) return
+    prefetchedAt.set(hrefString, Date.now())
     router.prefetch(hrefString)
   }
 
   const schedulePrefetch = () => {
-    if (!hrefString || !shouldPrefetch() || prefetchedUrls.has(hrefString)) return
+    if (!hrefString.startsWith("/") || !shouldPrefetch() || isFreshPrefetch(hrefString)) return
     if (timerRef.current) clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(prefetchNow, intentDelayMs)
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null
+      prefetchNow()
+    }, intentDelayMs)
   }
 
   const cancelScheduledPrefetch = () => {
@@ -61,38 +87,48 @@ export function SmartPrefetchLink({
     timerRef.current = null
   }
 
+  useEffect(() => cancelScheduledPrefetch, [])
+
   useEffect(() => {
-    if (!viewportPrefetch || !hrefString || !shouldPrefetch() || prefetchedUrls.has(hrefString)) return
-    if (viewportPrefetchCount >= MAX_VIEWPORT_PREFETCH) return
+    if (!eagerPrefetch || !hrefString.startsWith("/") || !shouldPrefetch() || isFreshPrefetch(hrefString)) return
+    const timer = window.setTimeout(prefetchNow, 0)
+    return () => window.clearTimeout(timer)
+  }, [eagerPrefetch, hrefString])
+
+  useEffect(() => {
+    if (eagerPrefetch || !viewportPrefetch || !hrefString.startsWith("/") || !shouldPrefetch() || isFreshPrefetch(hrefString)) return
     const node = anchorRef.current
     if (!node || typeof IntersectionObserver === "undefined") return
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (!entries.some((entry) => entry.isIntersecting)) return
-        if (viewportPrefetchCount >= MAX_VIEWPORT_PREFETCH || prefetchedUrls.has(hrefString)) {
+        if (isFreshPrefetch(hrefString) || !claimViewportBudget(pathname)) {
           observer.disconnect()
           return
         }
-        viewportPrefetchCount += 1
-        const schedule = (window as Window & { requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number }).requestIdleCallback
+
+        const schedule = (window as Window & {
+          requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
+        }).requestIdleCallback
+
         if (schedule) schedule(prefetchNow, { timeout: 500 })
         else window.setTimeout(prefetchNow, 50)
         observer.disconnect()
       },
-      { rootMargin: "600px 0px" },
+      { rootMargin: "500px 0px" },
     )
 
     observer.observe(node)
     return () => observer.disconnect()
-  }, [hrefString, viewportPrefetch])
+  }, [eagerPrefetch, hrefString, pathname, viewportPrefetch])
 
   return (
     <Link
       {...props}
       ref={anchorRef}
       href={href}
-      prefetch={prefetch}
+      prefetch={false}
       onMouseEnter={(event: MouseEvent<HTMLAnchorElement>) => {
         schedulePrefetch()
         onMouseEnter?.(event)
