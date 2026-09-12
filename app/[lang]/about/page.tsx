@@ -2,7 +2,7 @@ import { BlueprintBackground } from "@/components/blueprint-background"
 import { AboutSection } from "@/components/about-section"
 import { TestimonialsSection } from "@/components/testimonials-section"
 import { PageHeader } from "@/components/page-header"
-import { getDictionary } from "@/lib/get-dictionary"
+import { getDictionary } from "@/lib/get-dictionary-cached"
 import { getPublicSiteUrl } from "@/lib/runtime-config"
 import { getSiteName, replaceLegacySiteName, withSiteName } from "@/lib/site-settings"
 
