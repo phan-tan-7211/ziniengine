@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { cache } from "react"
+import { cache, Suspense } from "react"
 import { getDictionary } from "@/lib/get-dictionary"
 import { PortableText } from "@portabletext/react"
 import { Calendar, ChevronRight, Home, Tag, User } from "lucide-react"
@@ -11,89 +11,70 @@ import { getSiteName, withSiteName } from "@/lib/site-settings"
 import { sanityClient } from "@/lib/sanity-client"
 
 const layChiTietDuAn = cache(async (slug: string, lang: string) => {
-  const source = await sanityClient.fetch(
-    `*[_type == "project" && slug.current == $slug && !(_id in path("drafts.**"))][0] {
+  const project = await sanityClient.fetch(
+    `coalesce(
+      *[
+        _type == "project" &&
+        language == $lang &&
+        !(_id in path("drafts.**")) &&
+        (
+          slug.current == $slug ||
+          (defined(_translationKey) && _translationKey == *[_type == "project" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey)
+        )
+      ][0],
+      *[
+        _type == "project" &&
+        language == "en" &&
+        !(_id in path("drafts.**")) &&
+        (
+          slug.current == $slug ||
+          (defined(_translationKey) && _translationKey == *[_type == "project" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey)
+        )
+      ][0],
+      *[
+        _type == "project" &&
+        language == "vi" &&
+        !(_id in path("drafts.**")) &&
+        (
+          slug.current == $slug ||
+          (defined(_translationKey) && _translationKey == *[_type == "project" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey)
+        )
+      ][0],
+      *[_type == "project" && slug.current == $slug && !(_id in path("drafts.**"))][0]
+    ) {
       _id,
-      _translationKey
+      _translationKey,
+      "_metadataGroupId": *[_type == "translation.metadata" && "project" in schemaTypes && references(^._id)][0]._id,
+      title,
+      client,
+      projectYear,
+      description,
+      content,
+      language,
+      "slug": slug.current,
+      "image": mainImage.asset->{ _id, url },
+      "gallery": coalesce(gallery[].asset->{ _id, url }, []),
+      "categoryIdentifier": coalesce(serviceCategory->_translationKey, serviceCategory->_id),
+      "serviceCategory": coalesce(
+        *[_type == "service" && _translationKey == ^.serviceCategory->_translationKey && language == $lang && !(_id in path("drafts.**"))][0],
+        *[_type == "service" && _translationKey == ^.serviceCategory->_translationKey && language == "en" && !(_id in path("drafts.**"))][0],
+        *[_type == "service" && _translationKey == ^.serviceCategory->_translationKey && language == "vi" && !(_id in path("drafts.**"))][0],
+        serviceCategory->
+      ) { title, "slug": slug.current },
+      "translations": select(
+        defined(_translationKey) => *[
+          _type == "project" &&
+          _translationKey == ^._translationKey &&
+          defined(slug.current) &&
+          !(_id in path("drafts.**"))
+        ] { language, "slug": slug.current },
+        []
+      )
     }`,
-    { slug }
+    { slug, lang }
   )
 
-  if (!source) return null
-
-  const query = source._translationKey
-    ? `coalesce(
-        *[_type == "project" && _translationKey == $translationKey && language == $lang && !(_id in path("drafts.**"))][0],
-        *[_type == "project" && _translationKey == $translationKey && language == "en" && !(_id in path("drafts.**"))][0],
-        *[_type == "project" && _translationKey == $translationKey && language == "vi" && !(_id in path("drafts.**"))][0],
-        *[_type == "project" && slug.current == $slug && !(_id in path("drafts.**"))][0]
-      ) {
-        _id,
-        _translationKey,
-        "_metadataGroupId": *[_type == "translation.metadata" && "project" in schemaTypes && references(^._id)][0]._id,
-        title,
-        client,
-        projectYear,
-        description,
-        content,
-        language,
-        "slug": slug.current,
-        "image": mainImage.asset->{ _id, url },
-        "gallery": coalesce(gallery[].asset->{ _id, url }, []),
-        "categoryIdentifier": coalesce(serviceCategory->_translationKey, serviceCategory->_id),
-        "serviceCategory": serviceCategory->{
-          _id,
-          _translationKey,
-          title,
-          "slug": slug.current
-        },
-        "translations": *[_type == "project" && _translationKey == ^._translationKey && defined(slug.current) && !(_id in path("drafts.**"))] {
-          language,
-          "slug": slug.current
-        }
-      }`
-    : `*[_type == "project" && slug.current == $slug && !(_id in path("drafts.**"))][0] {
-        _id,
-        _translationKey,
-        "_metadataGroupId": *[_type == "translation.metadata" && "project" in schemaTypes && references(^._id)][0]._id,
-        title,
-        client,
-        projectYear,
-        description,
-        content,
-        language,
-        "slug": slug.current,
-        "image": mainImage.asset->{ _id, url },
-        "gallery": coalesce(gallery[].asset->{ _id, url }, []),
-        "categoryIdentifier": coalesce(serviceCategory->_translationKey, serviceCategory->_id),
-        "serviceCategory": serviceCategory->{
-          _id,
-          _translationKey,
-          title,
-          "slug": slug.current
-        },
-        "translations": []
-      }`
-
-  const project = await sanityClient.fetch(query, {
-    slug,
-    lang,
-    translationKey: source._translationKey || "",
-  })
-
   if (!project) return null
-
-  if (project.serviceCategory?._translationKey) {
-    const localizedCategory = await sanityClient.fetch(
-      `coalesce(
-        *[_type == "service" && _translationKey == $key && language == $lang && !(_id in path("drafts.**"))][0],
-        *[_type == "service" && _translationKey == $key && language == "en" && !(_id in path("drafts.**"))][0],
-        *[_type == "service" && _translationKey == $key && language == "vi" && !(_id in path("drafts.**"))][0]
-      ) { title, "slug": slug.current }`,
-      { key: project.serviceCategory._translationKey, lang }
-    )
-    if (localizedCategory) project.serviceCategory = localizedCategory
-  }
 
   return {
     ...project,
@@ -113,7 +94,7 @@ async function layDuAnLienQuan(project: any, lang: string) {
       defined(slug.current) &&
       coalesce(serviceCategory->_translationKey, serviceCategory->_id) == $categoryIdentifier &&
       !(_id in path("drafts.**"))
-    ] | order(_createdAt desc) {
+    ] | order(_createdAt desc)[0...24] {
       _id,
       _translationKey,
       "_metadataGroupId": *[_type == "translation.metadata" && "project" in schemaTypes && references(^._id)][0]._id,
@@ -146,6 +127,46 @@ async function layDuAnLienQuan(project: any, lang: string) {
     )
     .filter(Boolean)
     .slice(0, 3)
+}
+
+async function RelatedProjects({ project, lang, dict }: { project: any; lang: string; dict: any }) {
+  const relatedProjects = await layDuAnLienQuan(project, lang)
+  const relatedItems = relatedProjects.map((item: any) => ({
+    id: item._metadataGroupId || item._translationKey || item._id,
+    href: `/${lang}/portfolio/${item.slug}`,
+    title: item.title,
+    description: item.description,
+    imageUrl: item.image?.url,
+    eyebrow: item.projectYear || project.serviceCategory?.title,
+  }))
+
+  return (
+    <DetailRelatedSection
+      eyebrow={dict.navigation?.projects || dict.portfolio?.title || "Dự án"}
+      title={dict.portfolio?.related_title || "Dự án liên quan"}
+      items={relatedItems}
+      viewAllHref={`/${lang}/portfolio`}
+      viewAllLabel={dict.navigation?.view_all_projects || "Xem tất cả dự án"}
+      readMoreLabel={dict.common?.read_more || "Xem chi tiết"}
+    />
+  )
+}
+
+function RelatedProjectsSkeleton() {
+  return (
+    <section className="section-space border-t border-border/50 bg-background" aria-hidden="true">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="animate-pulse">
+          <div className="h-8 w-56 rounded bg-muted" />
+          <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            <div className="h-72 rounded-[var(--radius-card)] bg-muted" />
+            <div className="h-72 rounded-[var(--radius-card)] bg-muted" />
+            <div className="h-72 rounded-[var(--radius-card)] bg-muted" />
+          </div>
+        </div>
+      </div>
+    </section>
+  )
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string; slug: string }> }) {
@@ -188,16 +209,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   ])
 
   if (!project) notFound()
-
-  const relatedProjects = await layDuAnLienQuan(project, lang)
-  const relatedItems = relatedProjects.map((item: any) => ({
-    id: item._metadataGroupId || item._translationKey || item._id,
-    href: `/${lang}/portfolio/${item.slug}`,
-    title: item.title,
-    description: item.description,
-    imageUrl: item.image?.url,
-    eyebrow: item.projectYear || project.serviceCategory?.title,
-  }))
 
   return (
     <main className="min-h-dvh bg-background text-foreground">
@@ -243,7 +254,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-14">
             <article className="lg:col-span-8">
               <div className="relative aspect-video overflow-hidden rounded-[var(--radius-card)] border border-border/60 bg-card shadow-card">
-                <SanityImage imageData={project.image} alt={project.title} width={1200} height={800} className="h-full w-full object-cover" />
+                <SanityImage imageData={project.image} alt={project.title} width={1200} height={800} className="h-full w-full object-cover" priority />
               </div>
 
               {project.content && (
@@ -304,14 +315,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </div>
       </section>
 
-      <DetailRelatedSection
-        eyebrow={dict.navigation?.projects || dict.portfolio?.title || "Dự án"}
-        title={dict.portfolio?.related_title || "Dự án liên quan"}
-        items={relatedItems}
-        viewAllHref={`/${lang}/portfolio`}
-        viewAllLabel={dict.navigation?.view_all_projects || "Xem tất cả dự án"}
-        readMoreLabel={dict.common?.read_more || "Xem chi tiết"}
-      />
+      <Suspense fallback={<RelatedProjectsSkeleton />}>
+        <RelatedProjects project={project} lang={lang} dict={dict} />
+      </Suspense>
 
       <Footer lang={lang} dict={dict} />
     </main>
