@@ -12,11 +12,15 @@ type Dictionary = Record<string, any>
 
 const dictionaries: Record<LocaleKey, Dictionary> = { vi, en, jp, kr, cn }
 const locales = Object.keys(dictionaries) as LocaleKey[]
-const legacyText = JSON.stringify(dictionaries).toLocaleLowerCase()
+
+// Keep legacy compatibility explicit. Do not infer the legacy company from arbitrary
+// words inside dictionaries (e.g. the generic word "company"), because that can
+// accidentally enable ZINITEK content for a brand-new white-label project.
+const LEGACY_COMPANY_BRANDS = new Set(['zinitek'])
 
 export function legacyDictionaryMatchesBrand(siteName: string) {
-  const normalized = siteName.trim().toLocaleLowerCase()
-  return normalized.length >= 3 && legacyText.includes(normalized)
+  const normalized = siteName.trim().toLocaleLowerCase().replace(/\s+/g, '')
+  return LEGACY_COMPANY_BRANDS.has(normalized)
 }
 
 function safeIdPart(value: string) {
