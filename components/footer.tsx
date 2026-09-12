@@ -46,11 +46,6 @@ export function Footer({ lang, dict, initialServices = [], initialLegalDocs = []
     wechatUrl ? { href: wechatUrl, label: wechatId ? `WeChat ${wechatId}` : "WeChat", icon: <MessageCircle className="size-4" /> } : null,
   ].filter(Boolean) as Array<{ href: string; label: string; icon: React.ReactNode }>
 
-  const fallbackLegalLinks = [
-    { name: footer?.privacy_policy || "Chính sách bảo mật", slug: "chinh-sach-bao-mat" },
-    { name: footer?.terms_of_use || "Điều khoản sử dụng", slug: "dieu-khoan-su-dung" },
-    { name: footer?.cookie_policy || "Chính sách cookie", slug: "chinh-sach-cookie" },
-  ]
   const currentYear = new Date().getFullYear()
 
   return (
@@ -95,9 +90,11 @@ export function Footer({ lang, dict, initialServices = [], initialLegalDocs = []
       <div className="border-t border-border/60 bg-secondary/35">
         <div className="content-shell flex flex-col items-center justify-between gap-4 py-5 md:flex-row">
           <p className="text-xs text-muted-foreground">{footer?.copyright || `© ${currentYear} ${siteName}. All rights reserved.`}</p>
-          <div className="flex flex-wrap gap-x-6 gap-y-2">
-            {initialLegalDocs.length ? initialLegalDocs.map((link) => <SmartPrefetchLink key={link._id} href={`/${link.language || lang}/policy/${link.slug}`} viewportPrefetch={false} className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{link.title}</SmartPrefetchLink>) : fallbackLegalLinks.map((link) => <SmartPrefetchLink key={link.slug} href={`/${lang}/policy/${link.slug}`} viewportPrefetch={false} className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{link.name}</SmartPrefetchLink>)}
-          </div>
+          {initialLegalDocs.length > 0 && (
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              {initialLegalDocs.map((link) => <SmartPrefetchLink key={link._id} href={`/${link.language || lang}/policy/${link.slug}`} viewportPrefetch={false} className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{link.title}</SmartPrefetchLink>)}
+            </div>
+          )}
         </div>
       </div>
     </footer>
