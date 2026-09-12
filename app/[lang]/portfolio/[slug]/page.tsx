@@ -6,7 +6,6 @@ import { Calendar, ChevronRight, Home, Tag, User } from "lucide-react"
 import Link from "next/link"
 import { DetailRelatedSection } from "@/components/detail-related-section"
 import { SanityImage } from "@/components/sanity-image"
-import { Footer } from "@/components/footer"
 import { getSiteName, withSiteName } from "@/lib/site-settings"
 import { sanityClient } from "@/lib/sanity-client"
 
@@ -14,31 +13,16 @@ const layChiTietDuAn = cache(async (slug: string, lang: string) => {
   const project = await sanityClient.fetch(
     `coalesce(
       *[
-        _type == "project" &&
-        language == $lang &&
-        !(_id in path("drafts.**")) &&
-        (
-          slug.current == $slug ||
-          (defined(_translationKey) && _translationKey == *[_type == "project" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey)
-        )
+        _type == "project" && language == $lang && !(_id in path("drafts.**")) &&
+        (slug.current == $slug || (defined(_translationKey) && _translationKey == *[_type == "project" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey))
       ][0],
       *[
-        _type == "project" &&
-        language == "en" &&
-        !(_id in path("drafts.**")) &&
-        (
-          slug.current == $slug ||
-          (defined(_translationKey) && _translationKey == *[_type == "project" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey)
-        )
+        _type == "project" && language == "en" && !(_id in path("drafts.**")) &&
+        (slug.current == $slug || (defined(_translationKey) && _translationKey == *[_type == "project" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey))
       ][0],
       *[
-        _type == "project" &&
-        language == "vi" &&
-        !(_id in path("drafts.**")) &&
-        (
-          slug.current == $slug ||
-          (defined(_translationKey) && _translationKey == *[_type == "project" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey)
-        )
+        _type == "project" && language == "vi" && !(_id in path("drafts.**")) &&
+        (slug.current == $slug || (defined(_translationKey) && _translationKey == *[_type == "project" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey))
       ][0],
       *[_type == "project" && slug.current == $slug && !(_id in path("drafts.**"))][0]
     ) {
@@ -62,12 +46,7 @@ const layChiTietDuAn = cache(async (slug: string, lang: string) => {
         serviceCategory->
       ) { title, "slug": slug.current },
       "translations": select(
-        defined(_translationKey) => *[
-          _type == "project" &&
-          _translationKey == ^._translationKey &&
-          defined(slug.current) &&
-          !(_id in path("drafts.**"))
-        ] { language, "slug": slug.current },
+        defined(_translationKey) => *[_type == "project" && _translationKey == ^._translationKey && defined(slug.current) && !(_id in path("drafts.**"))] { language, "slug": slug.current },
         []
       )
     }`,
@@ -75,7 +54,6 @@ const layChiTietDuAn = cache(async (slug: string, lang: string) => {
   )
 
   if (!project) return null
-
   return {
     ...project,
     title: typeof project.title === "string" ? project.title : "Dự án",
@@ -116,15 +94,9 @@ async function layDuAnLienQuan(project: any, lang: string) {
   })
 
   const currentGroupKey = project._metadataGroupId || project._translationKey || project._id
-
   return Object.entries(groups)
     .filter(([key]) => key !== currentGroupKey)
-    .map(([, group]) =>
-      group.find((item) => item.language === lang) ||
-      group.find((item) => item.language === "en") ||
-      group.find((item) => item.language === "vi") ||
-      group[0]
-    )
+    .map(([, group]) => group.find((item) => item.language === lang) || group.find((item) => item.language === "en") || group.find((item) => item.language === "vi") || group[0])
     .filter(Boolean)
     .slice(0, 3)
 }
@@ -174,10 +146,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const [project, siteName] = await Promise.all([layChiTietDuAn(slug, lang), getSiteName()])
   if (!project) return { title: { absolute: withSiteName("Dự án không tồn tại", siteName) } }
 
-  const translations = Object.fromEntries(
-    project.translations.map((item: any) => [item.language, `/${item.language}/portfolio/${item.slug}`])
-  )
-
+  const translations = Object.fromEntries(project.translations.map((item: any) => [item.language, `/${item.language}/portfolio/${item.slug}`]))
   return {
     title: { absolute: withSiteName(project.title, siteName) },
     description: project.description,
@@ -203,11 +172,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ lang: string; slug: string }> }) {
   const { lang, slug } = await params
-  const [dict, project] = await Promise.all([
-    getDictionary(lang),
-    layChiTietDuAn(slug, lang),
-  ])
-
+  const [dict, project] = await Promise.all([getDictionary(lang), layChiTietDuAn(slug, lang)])
   if (!project) notFound()
 
   return (
@@ -218,31 +183,15 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         <div className="pointer-events-none absolute inset-0 bg-blueprint-grid opacity-35 dark:opacity-55" aria-hidden="true" />
         <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="mb-7 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2 text-sm sm:mb-8" aria-label="Breadcrumb">
-            <div className="flex min-w-0 items-center gap-2">
-              <Home className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              <Link href={`/${lang}`} className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">{dict.common?.home || "Trang chủ"}</Link>
-            </div>
-            <div className="flex min-w-0 items-center gap-2">
-              <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden="true" />
-              <Link href={`/${lang}/portfolio`} className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">{dict.navigation?.projects || dict.portfolio?.title || "Dự án"}</Link>
-            </div>
-            <div className="flex min-w-0 items-center gap-2">
-              <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden="true" />
-              <span className="max-w-[70vw] truncate font-medium text-primary" aria-current="page" title={project.title}>{project.title}</span>
-            </div>
+            <div className="flex min-w-0 items-center gap-2"><Home className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /><Link href={`/${lang}`} className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">{dict.common?.home || "Trang chủ"}</Link></div>
+            <div className="flex min-w-0 items-center gap-2"><ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden="true" /><Link href={`/${lang}/portfolio`} className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">{dict.navigation?.projects || dict.portfolio?.title || "Dự án"}</Link></div>
+            <div className="flex min-w-0 items-center gap-2"><ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden="true" /><span className="max-w-[70vw] truncate font-medium text-primary" aria-current="page" title={project.title}>{project.title}</span></div>
           </nav>
 
           <div className="max-w-4xl">
-            {project.serviceCategory?.title && (
-              <div className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-                <Tag className="size-4" aria-hidden="true" />
-                {project.serviceCategory.title}
-              </div>
-            )}
+            {project.serviceCategory?.title && <div className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary"><Tag className="size-4" aria-hidden="true" />{project.serviceCategory.title}</div>}
             <h1 className="text-balance font-serif text-4xl font-bold leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-6xl">{project.title}</h1>
-            {project.description && (
-              <p className="mt-6 max-w-[68ch] border-l-2 border-primary pl-5 text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">{project.description}</p>
-            )}
+            {project.description && <p className="mt-6 max-w-[68ch] border-l-2 border-primary pl-5 text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">{project.description}</p>}
           </div>
         </div>
         <div className="pointer-events-none absolute left-8 top-32 hidden size-24 border-l border-t border-primary/20 lg:block" aria-hidden="true" />
@@ -256,22 +205,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               <div className="relative aspect-video overflow-hidden rounded-[var(--radius-card)] border border-border/60 bg-card shadow-card">
                 <SanityImage imageData={project.image} alt={project.title} width={1200} height={800} className="h-full w-full object-cover" priority />
               </div>
-
-              {project.content && (
-                <div className="prose prose-slate mt-10 max-w-none dark:prose-invert prose-headings:font-serif prose-a:text-primary prose-strong:text-foreground">
-                  <PortableText value={project.content} />
-                </div>
-              )}
-
+              {project.content && <div className="prose prose-slate mt-10 max-w-none dark:prose-invert prose-headings:font-serif prose-a:text-primary prose-strong:text-foreground"><PortableText value={project.content} /></div>}
               {project.gallery.length > 0 && (
                 <div className="mt-14 border-t border-border/50 pt-10">
                   <h2 className="font-serif text-2xl font-bold text-foreground sm:text-3xl">{dict.portfolio?.gallery_title || "Hình ảnh thực tế"}</h2>
                   <div className="mt-7 grid grid-cols-2 gap-4 md:grid-cols-3">
-                    {project.gallery.map((image: any, index: number) => (
-                      <div key={image._id || index} className="group relative aspect-square overflow-hidden rounded-2xl border border-border/60 bg-card shadow-soft transition-all lg:hover:-translate-y-1 lg:hover:border-primary/35 lg:hover:shadow-card">
-                        <SanityImage imageData={image} alt={`${project.title} ${index + 1}`} width={500} height={500} className="h-full w-full object-cover transition-transform duration-700 lg:group-hover:scale-110" />
-                      </div>
-                    ))}
+                    {project.gallery.map((image: any, index: number) => <div key={image._id || index} className="group relative aspect-square overflow-hidden rounded-2xl border border-border/60 bg-card shadow-soft transition-all lg:hover:-translate-y-1 lg:hover:border-primary/35 lg:hover:shadow-card"><SanityImage imageData={image} alt={`${project.title} ${index + 1}`} width={500} height={500} className="h-full w-full object-cover transition-transform duration-700 lg:group-hover:scale-110" /></div>)}
                   </div>
                 </div>
               )}
@@ -282,32 +221,14 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                 <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-border/60 bg-card p-6 shadow-card sm:p-7">
                   <div className="pointer-events-none absolute right-0 top-0 size-40 rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
                   <h2 className="relative border-b border-border/50 pb-4 font-serif text-xl font-bold text-foreground">{dict.portfolio?.project_info || "Thông tin dự án"}</h2>
-
                   <dl className="relative mt-6 space-y-6">
-                    <div>
-                      <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground"><User className="size-4" aria-hidden="true" />{dict.portfolio?.client_label || "Khách hàng"}</dt>
-                      <dd className="mt-2 text-lg font-bold text-foreground">{project.client || "—"}</dd>
-                    </div>
-                    <div>
-                      <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground"><Calendar className="size-4" aria-hidden="true" />{dict.portfolio?.year_label || "Năm thực hiện"}</dt>
-                      <dd className="mt-2 text-lg font-bold text-foreground">{project.projectYear || "—"}</dd>
-                    </div>
+                    <div><dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground"><User className="size-4" aria-hidden="true" />{dict.portfolio?.client_label || "Khách hàng"}</dt><dd className="mt-2 text-lg font-bold text-foreground">{project.client || "—"}</dd></div>
+                    <div><dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground"><Calendar className="size-4" aria-hidden="true" />{dict.portfolio?.year_label || "Năm thực hiện"}</dt><dd className="mt-2 text-lg font-bold text-foreground">{project.projectYear || "—"}</dd></div>
                     {project.serviceCategory?.title && project.serviceCategory?.slug && (
-                      <div>
-                        <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground"><Tag className="size-4" aria-hidden="true" />{dict.portfolio?.service_label || "Dịch vụ"}</dt>
-                        <dd className="mt-2">
-                          <Link href={`/${lang}/services/${project.serviceCategory.slug}`} className="inline-flex min-h-11 items-center gap-1 text-lg font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                            {project.serviceCategory.title}
-                            <ChevronRight className="size-4 transition-transform lg:group-hover:translate-x-1" aria-hidden="true" />
-                          </Link>
-                        </dd>
-                      </div>
+                      <div><dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground"><Tag className="size-4" aria-hidden="true" />{dict.portfolio?.service_label || "Dịch vụ"}</dt><dd className="mt-2"><Link href={`/${lang}/services/${project.serviceCategory.slug}`} className="inline-flex min-h-11 items-center gap-1 text-lg font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{project.serviceCategory.title}<ChevronRight className="size-4 transition-transform lg:group-hover:translate-x-1" aria-hidden="true" /></Link></dd></div>
                     )}
                   </dl>
-
-                  <Link href={`/${lang}/contact`} className="relative mt-8 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-brand transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hover:scale-[1.03]">
-                    {dict.common?.contact_btn || "Liên hệ tư vấn"}
-                  </Link>
+                  <Link href={`/${lang}/contact`} className="relative mt-8 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-brand transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hover:scale-[1.03]">{dict.common?.contact_btn || "Liên hệ tư vấn"}</Link>
                 </div>
               </div>
             </aside>
@@ -318,8 +239,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       <Suspense fallback={<RelatedProjectsSkeleton />}>
         <RelatedProjects project={project} lang={lang} dict={dict} />
       </Suspense>
-
-      <Footer lang={lang} dict={dict} />
     </main>
   )
 }
