@@ -70,7 +70,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
           lang={lang}
           dict={dict}
         />
-        <AboutSection lang={lang} dict={dict} />
+        <AboutSection lang={lang} dict={dict} siteName={siteName} />
         <TestimonialsSection lang={lang} dict={dict} />
       </div>
       <Footer lang={lang} dict={dict} />
