@@ -4,13 +4,14 @@ import { AboutSection } from "@/components/about-section"
 import { TestimonialsSection } from "@/components/testimonials-section"
 import { PageHeader } from "@/components/page-header"
 import { getDictionary } from "@/lib/get-dictionary"
+import { getPublicSiteUrl } from "@/lib/runtime-config"
 import { getSiteName, replaceLegacySiteName, withSiteName } from "@/lib/site-settings"
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   const [dict, siteName] = await Promise.all([getDictionary(lang), getSiteName()])
-  const title = withSiteName(dict.about_page?.meta_title || "Giới thiệu - ZINITEK", siteName)
-  const description = replaceLegacySiteName(dict.about_page?.header_desc || "Câu chuyện về hành trình ZINITEK", siteName)
+  const title = withSiteName(dict.about_page?.meta_title || "Giới thiệu", siteName)
+  const description = replaceLegacySiteName(dict.about_page?.header_desc || "Thông tin về doanh nghiệp, năng lực và định hướng phát triển.", siteName)
 
   return {
     title: { absolute: title },
@@ -34,22 +35,23 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 export default async function AboutPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   const [dict, siteName] = await Promise.all([getDictionary(lang), getSiteName()])
+  const siteUrl = getPublicSiteUrl()
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "AboutPage",
-        "@id": `https://zinitek.vn/${lang}/about/#webpage`,
-        url: `https://zinitek.vn/${lang}/about`,
-        name: withSiteName(dict.about_page?.meta_title || "Giới thiệu - ZINITEK", siteName),
+        "@id": `${siteUrl}/${lang}/about/#webpage`,
+        url: `${siteUrl}/${lang}/about`,
+        name: withSiteName(dict.about_page?.meta_title || "Giới thiệu", siteName),
         description: dict.about_page?.header_desc,
       },
       {
         "@type": "Organization",
-        "@id": "https://zinitek.vn/#organization",
+        "@id": `${siteUrl}/#organization`,
         name: siteName,
-        url: "https://zinitek.vn",
-        logo: "https://zinitek.vn/logo.png",
+        url: siteUrl,
+        logo: `${siteUrl}/logo.png`,
       },
     ],
   }
@@ -63,8 +65,8 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
       <div className="relative z-10">
         <PageHeader
           title={dict.about_page?.header_title || "Giới thiệu"}
-          subtitle={dict.about_page?.header_subtitle || "Câu chuyện ZINITEK"}
-          description={dict.about_page?.header_top_desc || "Hành trình từ xưởng cơ khí đến đối tác quốc tế."}
+          subtitle={dict.about_page?.header_subtitle || "Về chúng tôi"}
+          description={dict.about_page?.header_top_desc || "Thông tin về doanh nghiệp, năng lực và định hướng phát triển."}
           lang={lang}
           dict={dict}
         />
