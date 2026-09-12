@@ -15,7 +15,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 
-const fallbackProjects = [
+const legacyFallbackProjects = [
   {
     id: 1,
     title: "Khuôn dập chi tiết ô tô",
@@ -93,12 +93,22 @@ function ProjectCard({ project, index, btnText, lang }: { project: any; index: n
   )
 }
 
-export function FeaturedProjects({ dict, projects = [], lang }: { dict?: any; projects?: any[]; lang: string }) {
+export function FeaturedProjects({
+  dict,
+  projects = [],
+  lang,
+  allowLegacyFallback = false,
+}: {
+  dict?: any
+  projects?: any[]
+  lang: string
+  allowLegacyFallback?: boolean
+}) {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-100px" })
   const shouldReduceMotion = useReducedMotion()
   const data = dict?.featured_projects || dict?.portfolio || {}
-  const displayProjects = projects.length > 0 ? projects : fallbackProjects
+  const displayProjects = projects.length > 0 ? projects : allowLegacyFallback ? legacyFallbackProjects : []
 
   const autoplay = useRef(
     Autoplay({
@@ -123,15 +133,15 @@ export function FeaturedProjects({ dict, projects = [], lang }: { dict?: any; pr
           <div className="max-w-2xl">
             <div className="mb-4 flex items-center gap-3">
               <span className="h-px w-10 bg-primary sm:w-12" aria-hidden="true" />
-              <span className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">{data.badge || "Dự án tiêu biểu"}</span>
+              <span className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">{data.badge || "Dự án"}</span>
             </div>
 
             <h2 id="featured-projects-title" className="max-w-xl text-balance font-serif text-3xl font-bold leading-tight text-foreground sm:text-4xl lg:text-5xl">
-              {data.title_main || "Năng lực"} <span className="text-primary">{data.title_highlight || "thực tế"}</span>
+              {data.title_main || "Dự án"} <span className="text-primary">{data.title_highlight || "nổi bật"}</span>
             </h2>
 
             <p className="mt-5 max-w-[65ch] text-base leading-7 text-muted-foreground sm:text-lg">
-              {data.description || "Minh chứng cho chất lượng gia công và kinh nghiệm thực chiến của ZINITEK qua các sản phẩm thực tế cho đối tác lớn."}
+              {data.description || "Các dự án và năng lực tiêu biểu của doanh nghiệp."}
             </p>
           </div>
 
@@ -143,26 +153,32 @@ export function FeaturedProjects({ dict, projects = [], lang }: { dict?: any; pr
           </Button>
         </motion.div>
 
-        <Carousel
-          data-swipe-zone="horizontal"
-          opts={{ align: "start", loop: true }}
-          plugins={shouldReduceMotion ? [] : [autoplay.current]}
-          className="w-full"
-          aria-label={data.badge || "Dự án tiêu biểu"}
-        >
-          <CarouselContent className="-ml-4">
-            {displayProjects.map((project, index) => (
-              <CarouselItem key={project.id || project.slug || index} className="pl-4 basis-[88%] sm:basis-[72%] md:basis-[48%] lg:basis-1/3">
-                <ProjectCard project={project} index={index} btnText={data.view_details || "Xem chi tiết"} lang={lang} />
-              </CarouselItem>
-            ))}
-          </CarouselContent>
+        {displayProjects.length > 0 ? (
+          <Carousel
+            data-swipe-zone="horizontal"
+            opts={{ align: "start", loop: true }}
+            plugins={shouldReduceMotion ? [] : [autoplay.current]}
+            className="w-full"
+            aria-label={data.badge || "Dự án"}
+          >
+            <CarouselContent className="-ml-4">
+              {displayProjects.map((project, index) => (
+                <CarouselItem key={project.id || project.slug || index} className="pl-4 basis-[88%] sm:basis-[72%] md:basis-[48%] lg:basis-1/3">
+                  <ProjectCard project={project} index={index} btnText={data.view_details || "Xem chi tiết"} lang={lang} />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
 
-          <div className="mt-6 flex justify-end gap-3">
-            <CarouselPrevious className="static size-11 translate-y-0 border-border bg-background shadow-sm hover:border-primary/30 hover:bg-primary/10" />
-            <CarouselNext className="static size-11 translate-y-0 border-border bg-background shadow-sm hover:border-primary/30 hover:bg-primary/10" />
+            <div className="mt-6 flex justify-end gap-3">
+              <CarouselPrevious className="static size-11 translate-y-0 border-border bg-background shadow-sm hover:border-primary/30 hover:bg-primary/10" />
+              <CarouselNext className="static size-11 translate-y-0 border-border bg-background shadow-sm hover:border-primary/30 hover:bg-primary/10" />
+            </div>
+          </Carousel>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-border bg-card/40 px-6 py-12 text-center text-sm text-muted-foreground">
+            {data.empty || "Đang cập nhật dự án."}
           </div>
-        </Carousel>
+        )}
       </div>
     </section>
   )
