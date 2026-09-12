@@ -1,7 +1,7 @@
 import { ProductHero } from "@/components/product-hero"
 import { BlueprintBackground } from "@/components/blueprint-background"
 import { HardHat } from "lucide-react"
-import { getDictionary } from "@/lib/get-dictionary"
+import { getDictionary } from "@/lib/get-dictionary-cached"
 import { getSiteName, withSiteName } from "@/lib/site-settings"
 import { ProductListContent } from "@/components/product-list-content"
 import { sanityClient } from "@/lib/sanity-client"
