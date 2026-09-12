@@ -3,7 +3,6 @@ import { cache, Suspense } from "react"
 import { getDictionary } from "@/lib/get-dictionary"
 import { ProductDetailPageContent } from "@/components/product-detail-page-content"
 import { DetailRelatedSection } from "@/components/detail-related-section"
-import { Footer } from "@/components/footer"
 import { ChevronRight, Home } from "lucide-react"
 import Link from "next/link"
 import { getSiteName, withSiteName } from "@/lib/site-settings"
@@ -207,7 +206,6 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       <Suspense fallback={<RelatedProductsSkeleton />}>
         <RelatedProducts product={product} lang={lang} dict={dict} />
       </Suspense>
-      <Footer lang={lang} dict={dict} />
     </div>
   )
 }
