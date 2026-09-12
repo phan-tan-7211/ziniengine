@@ -1,7 +1,7 @@
 import { BlueprintBackground } from "@/components/blueprint-background"
 import { ContactSection } from "@/components/contact-section"
 import { PageHeader } from "@/components/page-header"
-import { getDictionary } from "@/lib/get-dictionary"
+import { getDictionary } from "@/lib/get-dictionary-cached"
 import { getPublicSiteUrl } from "@/lib/runtime-config"
 import { getSiteSettings, replaceLegacySiteName, resolveSiteName, withSiteName } from "@/lib/site-settings"
 
