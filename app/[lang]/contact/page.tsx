@@ -1,4 +1,3 @@
-import { Footer } from "@/components/footer"
 import { BlueprintBackground } from "@/components/blueprint-background"
 import { ContactSection } from "@/components/contact-section"
 import { PageHeader } from "@/components/page-header"
@@ -82,7 +81,6 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
         />
         <ContactSection lang={lang} dict={dict} />
       </div>
-      <Footer lang={lang} dict={dict} />
     </main>
   )
 }
