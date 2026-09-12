@@ -57,12 +57,15 @@ export function HeroSection({ dict, lang }: { dict: any; lang: string }) {
   const data = dict?.hero || dict
   const shouldReduceMotion = useReducedMotion()
 
+  // These legacy numeric values are shown only when the corresponding company
+  // labels exist. A brand-new white-label dataset receives an empty stats object,
+  // so it must not inherit ZINITEK's achievements.
   const stats = [
-    { value: 500, suffix: "+", label: data?.stats?.projects || "Dự án hoàn thành" },
-    { value: 10, suffix: "+", label: data?.stats?.experience || "Năm kinh nghiệm" },
-    { value: 100, suffix: "%", label: data?.stats?.quality || "Sản phẩm đạt chuẩn" },
-    { value: 50, suffix: "+", label: data?.stats?.experts || "Kỹ sư chuyên gia" },
-  ]
+    data?.stats?.projects ? { value: 500, suffix: "+", label: data.stats.projects } : null,
+    data?.stats?.experience ? { value: 10, suffix: "+", label: data.stats.experience } : null,
+    data?.stats?.quality ? { value: 100, suffix: "%", label: data.stats.quality } : null,
+    data?.stats?.experts ? { value: 50, suffix: "+", label: data.stats.experts } : null,
+  ].filter(Boolean) as Array<{ value: number; suffix: string; label: string }>
 
   const reveal = shouldReduceMotion
     ? { initial: false as const, animate: undefined }
@@ -89,7 +92,7 @@ export function HeroSection({ dict, lang }: { dict: any; lang: string }) {
               className="mb-7 inline-flex min-h-11 items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary"
             >
               <CheckCircle2 className="size-4" aria-hidden="true" />
-              <span>{data?.badge || "Vận hành theo tiêu chuẩn Nhật Bản"}</span>
+              <span>{data?.badge || "Giải pháp kỹ thuật"}</span>
             </m.div>
 
             <h1
@@ -97,7 +100,7 @@ export function HeroSection({ dict, lang }: { dict: any; lang: string }) {
               className="text-balance font-serif text-4xl font-bold uppercase leading-[1.02] tracking-[-0.03em] text-foreground sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
             >
               <m.span {...reveal} transition={{ duration: 0.4 }} className="block">
-                {data?.title_line1 || "Kỹ thuật tin cậy"}
+                {data?.title_line1 || "Giải pháp"}
               </m.span>
               <m.span
                 initial={shouldReduceMotion ? false : { opacity: 0 }}
@@ -105,14 +108,14 @@ export function HeroSection({ dict, lang }: { dict: any; lang: string }) {
                 transition={{ duration: 0.35, delay: 0.12 }}
                 className="mt-2 block normal-case text-primary"
               >
-                {data?.title_highlight || "Hiệu quả"}
+                {data?.title_highlight || "kỹ thuật"}
               </m.span>
               <m.span
                 {...reveal}
                 transition={{ duration: 0.4, delay: 0.2 }}
                 className="mt-2 block"
               >
-                {data?.title_line2 || "Vượt mong đợi"}
+                {data?.title_line2 || "cho doanh nghiệp"}
               </m.span>
             </h1>
 
@@ -122,7 +125,7 @@ export function HeroSection({ dict, lang }: { dict: any; lang: string }) {
               transition={{ duration: 0.45, delay: 0.18 }}
               className="mx-auto mt-7 max-w-[68ch] text-pretty text-base leading-7 text-muted-foreground sm:text-lg lg:text-xl lg:leading-8"
               dangerouslySetInnerHTML={{
-                __html: data?.description || "ZINITEK chuyên gia công CNC và thiết kế khuôn mẫu.",
+                __html: data?.description || "Website doanh nghiệp.",
               }}
             />
 
@@ -138,7 +141,7 @@ export function HeroSection({ dict, lang }: { dict: any; lang: string }) {
                 className="group min-h-12 rounded-full bg-primary px-7 text-base font-semibold text-primary-foreground shadow-soft transition-[background-color,box-shadow,transform] hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <Link href={`/${lang}/services`}>
-                  {data?.cta_primary || "Khám phá dịch vụ"}
+                  {data?.cta_primary || "Xem dịch vụ"}
                   <ArrowRight
                     className="ml-2 size-5 transition-transform group-hover:translate-x-1"
                     aria-hidden="true"
@@ -154,28 +157,30 @@ export function HeroSection({ dict, lang }: { dict: any; lang: string }) {
               >
                 <Link href={`/${lang}/portfolio`}>
                   <Play className="mr-2 size-5 text-primary" aria-hidden="true" />
-                  {data?.cta_secondary || "Dự án tiêu biểu"}
+                  {data?.cta_secondary || "Xem dự án"}
                 </Link>
               </Button>
             </m.div>
 
-            <m.dl
-              initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
-              animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.34 }}
-              className="mt-14 grid grid-cols-2 gap-x-4 gap-y-8 border-t border-border/80 pt-9 md:grid-cols-4 md:gap-6 lg:mt-16 lg:pt-10"
-            >
-              {stats.map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <dd>
-                    <AnimatedCounter value={stat.value} suffix={stat.suffix} />
-                  </dd>
-                  <dt className="mx-auto mt-2 max-w-36 text-xs font-medium uppercase leading-5 tracking-[0.12em] text-muted-foreground sm:text-sm">
-                    {stat.label}
-                  </dt>
-                </div>
-              ))}
-            </m.dl>
+            {stats.length > 0 && (
+              <m.dl
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+                animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.34 }}
+                className="mt-14 grid grid-cols-2 gap-x-4 gap-y-8 border-t border-border/80 pt-9 md:grid-cols-4 md:gap-6 lg:mt-16 lg:pt-10"
+              >
+                {stats.map((stat) => (
+                  <div key={stat.label} className="text-center">
+                    <dd>
+                      <AnimatedCounter value={stat.value} suffix={stat.suffix} />
+                    </dd>
+                    <dt className="mx-auto mt-2 max-w-36 text-xs font-medium uppercase leading-5 tracking-[0.12em] text-muted-foreground sm:text-sm">
+                      {stat.label}
+                    </dt>
+                  </div>
+                ))}
+              </m.dl>
+            )}
           </div>
 
           <div

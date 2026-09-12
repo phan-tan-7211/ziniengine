@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const { lang } = await params
   const [dict, siteSettings] = await Promise.all([getDictionary(lang), getSiteSettings()])
   const siteName = resolveSiteName(siteSettings)
-  const cleanDescription = typeof dict.hero?.description === 'string' ? dict.hero.description.replace(/<[^>]*>?/gm, '') : `${siteName} - website chính thức.`
+  const cleanDescription = typeof dict.hero?.description === 'string' ? dict.hero.description.replace(/<[^>]*>?/gm, '') : `${siteName}`
   const siteTitle = `${siteName} - ${dict.hero?.title_line1 || ''} ${dict.hero?.title_highlight || ''}`.trim()
   return {
     metadataBase: new URL(getPublicSiteUrl()),

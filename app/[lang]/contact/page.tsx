@@ -3,14 +3,15 @@ import { BlueprintBackground } from "@/components/blueprint-background"
 import { ContactSection } from "@/components/contact-section"
 import { PageHeader } from "@/components/page-header"
 import { getDictionary } from "@/lib/get-dictionary"
+import { getPublicSiteUrl } from "@/lib/runtime-config"
 import { getSiteSettings, replaceLegacySiteName, resolveSiteName, withSiteName } from "@/lib/site-settings"
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   const [dict, siteSettings] = await Promise.all([getDictionary(lang), getSiteSettings()])
   const siteName = resolveSiteName(siteSettings)
-  const title = withSiteName(dict.contact?.title || "Liên hệ - ZINITEK", siteName)
-  const description = replaceLegacySiteName(dict.contact?.description || "Liên hệ ngay để nhận tư vấn miễn phí và báo giá chi tiết cho dự án của bạn.", siteName)
+  const title = withSiteName(dict.contact?.title || "Liên hệ", siteName)
+  const description = replaceLegacySiteName(dict.contact?.description || "Liên hệ để trao đổi về nhu cầu và giải pháp phù hợp cho dự án của bạn.", siteName)
 
   return {
     title: { absolute: title },
@@ -35,18 +36,18 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
   const { lang } = await params
   const [dict, siteSettings] = await Promise.all([getDictionary(lang), getSiteSettings()])
   const siteName = resolveSiteName(siteSettings)
+  const siteUrl = getPublicSiteUrl()
   const localBusiness: Record<string, any> = {
     "@type": "LocalBusiness",
-    "@id": "https://zinitek.vn/#localbusiness",
+    "@id": `${siteUrl}/#localbusiness`,
     name: siteName,
-    url: "https://zinitek.vn",
+    url: siteUrl,
   }
   if (siteSettings?.phoneTel) localBusiness.telephone = siteSettings.phoneTel
   if (siteSettings?.addressDisplay) {
     localBusiness.address = {
       "@type": "PostalAddress",
       streetAddress: siteSettings.addressDisplay,
-      addressCountry: "VN",
     }
   }
   if (siteSettings?.googleMapsUrl) localBusiness.hasMap = siteSettings.googleMapsUrl
@@ -56,9 +57,9 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
     "@graph": [
       {
         "@type": "ContactPage",
-        "@id": `https://zinitek.vn/${lang}/contact/#webpage`,
-        url: `https://zinitek.vn/${lang}/contact`,
-        name: withSiteName(dict.contact?.title || "Liên hệ - ZINITEK", siteName),
+        "@id": `${siteUrl}/${lang}/contact/#webpage`,
+        url: `${siteUrl}/${lang}/contact`,
+        name: withSiteName(dict.contact?.title || "Liên hệ", siteName),
         description: dict.contact?.description,
       },
       localBusiness,
@@ -75,7 +76,7 @@ export default async function ContactPage({ params }: { params: Promise<{ lang: 
         <PageHeader
           title={dict.contact?.title || "Contact"}
           subtitle={dict.contact?.subtitle || "Get in touch"}
-          description={dict.contact?.description || "ZINITEK is ready to discuss the right technical solution for your project."}
+          description={dict.contact?.description || "Liên hệ để trao đổi về nhu cầu và giải pháp phù hợp cho dự án của bạn."}
           lang={lang}
           dict={dict}
         />

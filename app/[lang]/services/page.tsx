@@ -8,106 +8,39 @@ import { getPublicSiteUrl } from "@/lib/runtime-config"
 import { sanityClient } from "@/lib/sanity-client"
 
 async function layDanhSachDichVu(lang: string) {
-  const query = `
+  const allServices: any[] = await sanityClient.fetch(`
     *[_type == "service" && defined(slug.current) && !(_id in path("drafts.**"))] | order(orderRank asc) {
-      _id,
-      _translationKey,
-      title,
-      description,
-      "slug": slug.current,
-      language,
-      icon,
-      orderRank,
-      "tags": coalesce(tags, [])
+      _id,_translationKey,title,description,"slug":slug.current,language,icon,orderRank,"tags":coalesce(tags,[])
     }
-  `
-
-  const allServices = await sanityClient.fetch(query)
+  `)
   const groups: Record<string, any[]> = {}
-
-  allServices.forEach((service: any) => {
+  allServices.forEach((service) => {
     const key = service._translationKey || service._id
     if (!groups[key]) groups[key] = []
     groups[key].push(service)
   })
-
   return Object.values(groups)
-    .map(
-      (group) =>
-        group.find((item) => item.language === lang) ||
-        group.find((item) => item.language === "en") ||
-        group.find((item) => item.language === "vi") ||
-        group[0]
-    )
+    .map((group) => group.find((item) => item.language === lang) || group.find((item) => item.language === "en") || group.find((item) => item.language === "vi") || group[0])
     .filter(Boolean)
-    .sort((a, b) => (a.orderRank || 0) - (b.orderRank || 0))
+    .sort((a,b)=>(a.orderRank||0)-(b.orderRank||0))
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   const [dict, siteName] = await Promise.all([getDictionary(lang), getSiteName()])
-  const title = withSiteName(dict.services?.meta_title || "Dịch vụ", siteName)
-  const description = dict.services?.meta_desc || "Thông tin về các dịch vụ và giải pháp kỹ thuật."
-
-  return {
-    title: { absolute: title },
-    description,
-    alternates: {
-      canonical: `/${lang}/services`,
-      languages: {
-        "vi-VN": "/vi/services",
-        "en-US": "/en/services",
-        "ja-JP": "/jp/services",
-        "ko-KR": "/kr/services",
-        "zh-CN": "/cn/services",
-      },
-    },
-    openGraph: { title, description, url: `/${lang}/services`, siteName },
-    twitter: { card: "summary", title, description },
-  }
+  const title = withSiteName(dict.services?.meta_title || dict.navigation?.services || "Services", siteName)
+  const description = dict.services?.meta_desc || dict.services?.hub_description || ""
+  return { title:{absolute:title}, description, alternates:{canonical:`/${lang}/services`,languages:{"vi-VN":"/vi/services","en-US":"/en/services","ja-JP":"/jp/services","ko-KR":"/kr/services","zh-CN":"/cn/services"}}, openGraph:{title,description,url:`/${lang}/services`,siteName}, twitter:{card:"summary",title,description} }
 }
 
 export default async function ServicesHubPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   const [dict, services, siteName] = await Promise.all([getDictionary(lang), layDanhSachDichVu(lang), getSiteName()])
   const siteUrl = getPublicSiteUrl()
-
-  const titleMain = dict.services?.title_main || "Dịch vụ"
-  const titleHighlight = dict.services?.title_highlight || "Kỹ thuật"
-  const pageTitle = `${titleMain} ${titleHighlight}`
-  const description = dict.services?.hub_description || "Giải pháp và dịch vụ kỹ thuật phù hợp với nhu cầu của khách hàng."
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    name: dict.services?.meta_title || `${siteName} Services`,
-    description: dict.services?.meta_desc || description,
-    itemListElement: services.map((service: any, index: number) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      url: `${siteUrl}/${lang}/services/${service.slug}`,
-      name: service.title,
-      description: service.description,
-    })),
-  }
-
-  return (
-    <div className="relative min-h-dvh overflow-x-clip bg-background text-foreground">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <div className="pointer-events-none absolute inset-0 z-0 opacity-20 dark:opacity-35" aria-hidden="true"><BlueprintBackground /></div>
-      <div className="relative z-10">
-        <PageHeader
-          title={pageTitle}
-          subtitle={dict.services?.badge || dict.navigation?.services || "Dịch vụ kỹ thuật"}
-          description={description}
-          lang={lang}
-          dict={dict}
-        />
-        <section className="section-space" aria-label={dict.navigation?.services || "Dịch vụ"}>
-          <ServiceListContent danhSachDichVu={services} lang={lang} dict={dict} />
-        </section>
-        <Footer lang={lang} dict={dict} />
-      </div>
-    </div>
-  )
+  const titleMain = dict.services?.title_main || dict.navigation?.services || "Services"
+  const titleHighlight = dict.services?.title_highlight || ""
+  const pageTitle = `${titleMain} ${titleHighlight}`.trim()
+  const description = dict.services?.hub_description || ""
+  const jsonLd={"@context":"https://schema.org","@type":"ItemList",name:dict.services?.meta_title||`${siteName} Services`,description:dict.services?.meta_desc||description,itemListElement:services.map((service:any,index:number)=>({"@type":"ListItem",position:index+1,url:`${siteUrl}/${lang}/services/${service.slug}`,name:service.title,description:service.description}))}
+  return <div className="relative min-h-dvh overflow-x-clip bg-background text-foreground"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/><div className="pointer-events-none absolute inset-0 z-0 opacity-20 dark:opacity-35" aria-hidden="true"><BlueprintBackground/></div><div className="relative z-10"><PageHeader title={pageTitle} subtitle={dict.navigation?.services} description={description} lang={lang} dict={dict}/><section className="section-space" aria-label={dict.navigation?.services}><ServiceListContent danhSachDichVu={services} lang={lang} dict={dict}/></section><Footer lang={lang} dict={dict}/></div></div>
 }
