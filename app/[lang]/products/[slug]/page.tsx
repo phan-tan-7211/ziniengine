@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { cache } from "react"
+import { cache, Suspense } from "react"
 import { getDictionary } from "@/lib/get-dictionary"
 import { ProductDetailPageContent } from "@/components/product-detail-page-content"
 import { DetailRelatedSection } from "@/components/detail-related-section"
@@ -75,7 +75,7 @@ async function getRelatedProducts(product: any, lang: string) {
       defined(slug.current) &&
       coalesce(serviceCategory->_translationKey, serviceCategory->_id) == $categoryIdentifier &&
       !(_id in path("drafts.**"))
-    ] | order(_createdAt desc) {
+    ] | order(_createdAt desc)[0...8] {
       _id,
       _translationKey,
       "_metadataGroupId": *[_type == "translation.metadata" && "product" in schemaTypes && references(^._id)][0]._id,
@@ -95,6 +95,46 @@ async function getRelatedProducts(product: any, lang: string) {
     .slice(0, 3)
 }
 
+async function RelatedProducts({ product, lang, dict }: { product: any; lang: string; dict: any }) {
+  const relatedProducts = await getRelatedProducts(product, lang)
+  const relatedItems = relatedProducts.map((item: any) => ({
+    id: item._metadataGroupId || item._translationKey || item._id,
+    href: `/${lang}/products/${item.slug}`,
+    title: item.title,
+    description: item.description,
+    imageUrl: item.image?.url,
+    eyebrow: item.modelCode || product.serviceCategory?.title,
+  }))
+
+  return (
+    <DetailRelatedSection
+      eyebrow={dict.navigation?.products}
+      title={dict.products?.related_title}
+      items={relatedItems}
+      viewAllHref={`/${lang}/products`}
+      viewAllLabel={dict.navigation?.view_all_products}
+      readMoreLabel={dict.common?.read_more}
+    />
+  )
+}
+
+function RelatedProductsSkeleton() {
+  return (
+    <section className="section-space border-t border-border/50 bg-background" aria-hidden="true">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="animate-pulse">
+          <div className="h-8 w-56 rounded bg-muted" />
+          <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            <div className="h-72 rounded-[var(--radius-card)] bg-muted" />
+            <div className="h-72 rounded-[var(--radius-card)] bg-muted" />
+            <div className="h-72 rounded-[var(--radius-card)] bg-muted" />
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ lang: string; slug: string }> }) {
   const { lang, slug } = await params
   const [product, siteName, dict] = await Promise.all([getProduct(slug, lang), getSiteName(), getDictionary(lang)])
@@ -107,15 +147,6 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const [dict, product] = await Promise.all([getDictionary(lang), getProduct(slug, lang)])
   if (!product) notFound()
 
-  const relatedProducts = await getRelatedProducts(product, lang)
-  const relatedItems = relatedProducts.map((item: any) => ({
-    id: item._metadataGroupId || item._translationKey || item._id,
-    href: `/${lang}/products/${item.slug}`,
-    title: item.title,
-    description: item.description,
-    imageUrl: item.image?.url,
-    eyebrow: item.modelCode || product.serviceCategory?.title,
-  }))
   const productContent = {
     title: product.title,
     modelCode: product.modelCode,
@@ -142,7 +173,9 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         <ProductDetailPageContent product={productContent} dictionary={dict} lang={lang} />
       </main>
 
-      <DetailRelatedSection eyebrow={dict.navigation?.products} title={dict.products?.related_title} items={relatedItems} viewAllHref={`/${lang}/products`} viewAllLabel={dict.navigation?.view_all_products} readMoreLabel={dict.common?.read_more} />
+      <Suspense fallback={<RelatedProductsSkeleton />}>
+        <RelatedProducts product={product} lang={lang} dict={dict} />
+      </Suspense>
       <Footer lang={lang} dict={dict} />
     </div>
   )
