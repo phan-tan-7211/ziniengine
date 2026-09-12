@@ -12,6 +12,7 @@ import { fetchSeoData } from "@/lib/fetch-seo-data"
 import { getSiteSettings, resolveSiteName, withSiteName } from "@/lib/site-settings"
 import { getPublicSiteUrl } from "@/lib/runtime-config"
 import { sanityClient } from "@/lib/sanity-client"
+import { legacyDictionaryMatchesBrand } from "@/sanity/bootstrap/legacyDictionaryBootstrap"
 
 type LocalizedContent = {
   language?: string
@@ -106,6 +107,7 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
   const { lang } = await params
   const [dictionary, siteSettings] = await Promise.all([getDictionary(lang), getSiteSettings()])
   const siteName = resolveSiteName(siteSettings)
+  const allowLegacyCompanyFallbacks = legacyDictionaryMatchesBrand(siteName)
   const siteUrl = getPublicSiteUrl()
   const blogDictionary = (dictionary.blog as Record<string, string>) || {}
   const newsDictionary = (dictionary.news_section as Record<string, string>) || {}
@@ -190,7 +192,12 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
         <div className="relative z-10 pt-20 lg:pt-24">
           <HeroSection dict={dictionary} lang={lang} />
           <AboutSummary dict={dictionary} lang={lang} />
-          <FeaturedProjects dict={dictionary} projects={latestProjects} lang={lang} />
+          <FeaturedProjects
+            dict={dictionary}
+            projects={latestProjects}
+            lang={lang}
+            allowLegacyFallback={allowLegacyCompanyFallbacks}
+          />
 
           <section aria-labelledby="news-section-title" className="relative border-y border-border/70 bg-card/40 py-20 sm:py-24 lg:py-28">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
