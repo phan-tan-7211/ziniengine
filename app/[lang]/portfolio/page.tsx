@@ -1,7 +1,7 @@
 import { BlueprintBackground } from "@/components/blueprint-background"
 import { PortfolioListContent } from "@/components/portfolio-list-content"
 import { PageHeader } from "@/components/page-header"
-import { getDictionary } from "@/lib/get-dictionary"
+import { getDictionary } from "@/lib/get-dictionary-cached"
 import { getSiteName, withSiteName } from "@/lib/site-settings"
 import { sanityClient } from "@/lib/sanity-client"
 import { getPublicSiteUrl } from "@/lib/runtime-config"
