@@ -1,7 +1,7 @@
 import { BlueprintBackground } from "@/components/blueprint-background"
 import { PageHeader } from "@/components/page-header"
 import { ServiceListContent } from "@/components/service-list-content"
-import { getDictionary } from "@/lib/get-dictionary"
+import { getDictionary } from "@/lib/get-dictionary-cached"
 import { getSiteName, withSiteName } from "@/lib/site-settings"
 import { getPublicSiteUrl } from "@/lib/runtime-config"
 import { getLocalizedServiceCatalog } from "@/lib/service-catalog"
