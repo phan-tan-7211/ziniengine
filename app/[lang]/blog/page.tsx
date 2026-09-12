@@ -1,4 +1,3 @@
-import { Footer } from "@/components/footer"
 import { BlueprintBackground } from "@/components/blueprint-background"
 import { BlogListContent } from "@/components/blog-list-content"
 import { PageHeader } from "@/components/page-header"
@@ -29,5 +28,5 @@ export default async function BlogPage({ params }: { params: Promise<{ lang: str
   const [dict,posts,siteName]=await Promise.all([getDictionary(lang),getBlogPosts(lang),getSiteName()])
   const siteUrl=getPublicSiteUrl()
   const jsonLd={"@context":"https://schema.org","@type":"Blog",name:dict.blog?.meta_title||`${siteName} Blog`,description:dict.blog?.meta_desc,url:`${siteUrl}/${lang}/blog`,blogPost:posts.map((post:any)=>({"@type":"BlogPosting",headline:post.title,url:`${siteUrl}/${lang}/blog/${post.slug}`,datePublished:post.publishedAt,image:post.mainImage?.url}))}
-  return <main className="relative min-h-dvh overflow-x-clip bg-background text-foreground"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/><div className="pointer-events-none absolute inset-0 z-0 opacity-25 dark:opacity-15" aria-hidden="true"><BlueprintBackground/></div><div className="relative z-10"><PageHeader title={dict.blog?.title} subtitle={dict.blog?.subtitle} description={dict.blog?.description} lang={lang} dict={dict}/><section className="pb-24 pt-10 sm:pt-12 lg:pb-28"><BlogListContent posts={posts} lang={lang} dict={dict}/></section></div><Footer lang={lang} dict={dict}/></main>
+  return <main className="relative min-h-dvh overflow-x-clip bg-background text-foreground"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/><div className="pointer-events-none absolute inset-0 z-0 opacity-25 dark:opacity-15" aria-hidden="true"><BlueprintBackground/></div><div className="relative z-10"><PageHeader title={dict.blog?.title} subtitle={dict.blog?.subtitle} description={dict.blog?.description} lang={lang} dict={dict}/><section className="pb-24 pt-10 sm:pt-12 lg:pb-28"><BlogListContent posts={posts} lang={lang} dict={dict}/></section></div></main>
 }
