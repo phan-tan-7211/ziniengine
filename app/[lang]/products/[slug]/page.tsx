@@ -9,60 +9,77 @@ import Link from "next/link"
 import { getSiteName, withSiteName } from "@/lib/site-settings"
 import { sanityClient } from "@/lib/sanity-client"
 
+const productProjection = `{
+  _id,
+  _translationKey,
+  "_metadataGroupId": *[_type == "translation.metadata" && "product" in schemaTypes && references(^._id)][0]._id,
+  title,
+  modelCode,
+  description,
+  "slug": slug.current,
+  language,
+  "image": image.asset->{ _id, url },
+  "gallery": coalesce(gallery[].asset->{ _id, url }, []),
+  "attachments": coalesce(attachments[].asset->{ _id, url, originalFilename }, []),
+  "features": coalesce(features, []),
+  "specifications": coalesce(specifications, []),
+  "categoryIdentifier": coalesce(serviceCategory->_translationKey, serviceCategory->_id),
+  "serviceCategory": coalesce(
+    *[_type == "service" && _translationKey == ^.serviceCategory->_translationKey && language == $lang && !(_id in path("drafts.**"))][0],
+    *[_type == "service" && _translationKey == ^.serviceCategory->_translationKey && language == "en" && !(_id in path("drafts.**"))][0],
+    *[_type == "service" && _translationKey == ^.serviceCategory->_translationKey && language == "vi" && !(_id in path("drafts.**"))][0],
+    serviceCategory->
+  ) { title, "slug": slug.current }
+}`
+
 const getProduct = cache(async (slug: string, lang: string) => {
-  const query = `
-    {
-      "metadata": *[
-        _type == "translation.metadata" &&
-        "product" in schemaTypes &&
-        count(translations[value->slug.current == $slug]) > 0
-      ][0] {
-        "product": translations[_key == $lang][0].value-> {
-          _id,
-          _translationKey,
-          "_metadataGroupId": *[_type == "translation.metadata" && "product" in schemaTypes && references(^._id)][0]._id,
-          title,
-          modelCode,
-          description,
-          "slug": slug.current,
-          language,
-          "image": image.asset->{ _id, url },
-          "gallery": coalesce(gallery[].asset->{ _id, url }, []),
-          "attachments": coalesce(attachments[].asset->{ _id, url, originalFilename }, []),
-          "features": coalesce(features, []),
-          "specifications": coalesce(specifications, []),
-          "categoryIdentifier": coalesce(serviceCategory->_translationKey, serviceCategory->_id),
-          "serviceCategory": coalesce(
-            *[_type == "service" && _translationKey == ^.serviceCategory->_translationKey && language == $lang && !(_id in path("drafts.**"))][0],
-            select(serviceCategory->language == $lang => serviceCategory->)
-          ) { title, "slug": slug.current }
-        }
-      },
-      "legacy": *[_type == "product" && slug.current == $slug && language == $lang && !(_id in path("drafts.**"))][0] {
-        _id,
-        _translationKey,
-        "_metadataGroupId": *[_type == "translation.metadata" && "product" in schemaTypes && references(^._id)][0]._id,
-        title,
-        modelCode,
-        description,
-        "slug": slug.current,
-        language,
-        "image": image.asset->{ _id, url },
-        "gallery": coalesce(gallery[].asset->{ _id, url }, []),
-        "attachments": coalesce(attachments[].asset->{ _id, url, originalFilename }, []),
-        "features": coalesce(features, []),
-        "specifications": coalesce(specifications, []),
-        "categoryIdentifier": coalesce(serviceCategory->_translationKey, serviceCategory->_id),
-        "serviceCategory": coalesce(
-          *[_type == "service" && _translationKey == ^.serviceCategory->_translationKey && language == $lang && !(_id in path("drafts.**"))][0],
-          select(serviceCategory->language == $lang => serviceCategory->)
-        ) { title, "slug": slug.current }
-      }
-    }
-  `
+  const query = `{
+    "metadataProduct": *[
+      _type == "translation.metadata" &&
+      "product" in schemaTypes &&
+      count(translations[value->slug.current == $slug]) > 0
+    ][0] {
+      "value": coalesce(
+        translations[_key == $lang][0].value->,
+        translations[_key == "en"][0].value->,
+        translations[_key == "vi"][0].value->,
+        translations[value->slug.current == $slug][0].value->
+      ) ${productProjection}
+    }.value,
+    "legacyProduct": coalesce(
+      *[
+        _type == "product" &&
+        language == $lang &&
+        !(_id in path("drafts.**")) &&
+        (
+          slug.current == $slug ||
+          (defined(_translationKey) && _translationKey == *[_type == "product" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey)
+        )
+      ][0],
+      *[
+        _type == "product" &&
+        language == "en" &&
+        !(_id in path("drafts.**")) &&
+        (
+          slug.current == $slug ||
+          (defined(_translationKey) && _translationKey == *[_type == "product" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey)
+        )
+      ][0],
+      *[
+        _type == "product" &&
+        language == "vi" &&
+        !(_id in path("drafts.**")) &&
+        (
+          slug.current == $slug ||
+          (defined(_translationKey) && _translationKey == *[_type == "product" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey)
+        )
+      ][0],
+      *[_type == "product" && slug.current == $slug && !(_id in path("drafts.**"))][0]
+    ) ${productProjection}
+  }`
 
   const result = await sanityClient.fetch(query, { slug, lang })
-  return result?.metadata?.product || result?.legacy || null
+  return result?.metadataProduct || result?.legacyProduct || null
 })
 
 async function getRelatedProducts(product: any, lang: string) {
@@ -71,11 +88,10 @@ async function getRelatedProducts(product: any, lang: string) {
   const rawProducts: any[] = await sanityClient.fetch(
     `*[
       _type == "product" &&
-      language == $lang &&
       defined(slug.current) &&
       coalesce(serviceCategory->_translationKey, serviceCategory->_id) == $categoryIdentifier &&
       !(_id in path("drafts.**"))
-    ] | order(_createdAt desc)[0...8] {
+    ] | order(_createdAt desc)[0...24] {
       _id,
       _translationKey,
       "_metadataGroupId": *[_type == "translation.metadata" && "product" in schemaTypes && references(^._id)][0]._id,
@@ -86,12 +102,27 @@ async function getRelatedProducts(product: any, lang: string) {
       language,
       "image": image.asset->{ _id, url }
     }`,
-    { categoryIdentifier: product.categoryIdentifier, lang },
+    { categoryIdentifier: product.categoryIdentifier },
   )
 
+  const groups: Record<string, any[]> = {}
+  rawProducts.forEach((item) => {
+    const key = item._metadataGroupId || item._translationKey || item._id
+    if (!groups[key]) groups[key] = []
+    groups[key].push(item)
+  })
+
   const currentGroupKey = product._metadataGroupId || product._translationKey || product._id
-  return rawProducts
-    .filter((item) => (item._metadataGroupId || item._translationKey || item._id) !== currentGroupKey)
+
+  return Object.entries(groups)
+    .filter(([key]) => key !== currentGroupKey)
+    .map(([, group]) =>
+      group.find((item) => item.language === lang) ||
+      group.find((item) => item.language === "en") ||
+      group.find((item) => item.language === "vi") ||
+      group[0]
+    )
+    .filter(Boolean)
     .slice(0, 3)
 }
 
