@@ -2,13 +2,16 @@
 
 import Link from "next/link"
 import type { ComponentProps, FocusEvent, MouseEvent, PointerEvent } from "react"
-import { useRef } from "react"
+import { useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 
 const prefetchedUrls = new Set<string>()
+let viewportPrefetchCount = 0
+const MAX_VIEWPORT_PREFETCH = 8
 
 type SmartPrefetchLinkProps = ComponentProps<typeof Link> & {
   intentDelayMs?: number
+  viewportPrefetch?: boolean
 }
 
 function shouldPrefetch() {
@@ -26,16 +29,18 @@ function shouldPrefetch() {
 
 export function SmartPrefetchLink({
   href,
-  intentDelayMs = 90,
+  intentDelayMs = 70,
+  viewportPrefetch = true,
   onMouseEnter,
   onMouseLeave,
   onFocus,
   onPointerDown,
-  prefetch = false,
+  prefetch = true,
   ...props
 }: SmartPrefetchLinkProps) {
   const router = useRouter()
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const anchorRef = useRef<HTMLAnchorElement | null>(null)
   const hrefString = typeof href === "string" ? href : href.pathname || ""
 
   const prefetchNow = () => {
@@ -56,9 +61,36 @@ export function SmartPrefetchLink({
     timerRef.current = null
   }
 
+  useEffect(() => {
+    if (!viewportPrefetch || !hrefString || !shouldPrefetch() || prefetchedUrls.has(hrefString)) return
+    if (viewportPrefetchCount >= MAX_VIEWPORT_PREFETCH) return
+    const node = anchorRef.current
+    if (!node || typeof IntersectionObserver === "undefined") return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return
+        if (viewportPrefetchCount >= MAX_VIEWPORT_PREFETCH || prefetchedUrls.has(hrefString)) {
+          observer.disconnect()
+          return
+        }
+        viewportPrefetchCount += 1
+        const schedule = (window as Window & { requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number }).requestIdleCallback
+        if (schedule) schedule(prefetchNow, { timeout: 500 })
+        else window.setTimeout(prefetchNow, 50)
+        observer.disconnect()
+      },
+      { rootMargin: "600px 0px" },
+    )
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [hrefString, viewportPrefetch])
+
   return (
     <Link
       {...props}
+      ref={anchorRef}
       href={href}
       prefetch={prefetch}
       onMouseEnter={(event: MouseEvent<HTMLAnchorElement>) => {
