@@ -1,11 +1,11 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { DynamicIcon } from "./ui/dynamic-icon"
 import { FallbackBadge } from "./fallback-badge"
+import { SmartPrefetchLink } from "./smart-prefetch-link"
 import { cn } from "@/lib/utils"
 
 interface ServiceListContentProps {
@@ -64,7 +64,7 @@ export function ServiceListContent({ danhSachDichVu, lang, dict }: ServiceListCo
         <AnimatePresence mode="popLayout" initial={false}>
           {filteredServices.map((service: any, index: number) => (
             <motion.article key={service._id || service.slug} layout={!shouldReduceMotion} initial={shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={shouldReduceMotion ? undefined : { opacity: 0, y: 10, scale: 0.98 }} transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.3, delay: Math.min(index * 0.035, 0.18) }} className="h-full">
-              <Link href={`/${lang}/services/${service.slug}`} className={cn("group relative flex h-full min-h-[230px] flex-col overflow-hidden rounded-[var(--radius-card)] border border-border/70 bg-card p-5 shadow-card transition-all duration-300", "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", "lg:hover:-translate-y-2 lg:hover:scale-[1.015] lg:hover:border-primary/45 lg:hover:shadow-brand")}>
+              <SmartPrefetchLink href={`/${lang}/services/${service.slug}`} className={cn("group relative flex h-full min-h-[230px] flex-col overflow-hidden rounded-[var(--radius-card)] border border-border/70 bg-card p-5 shadow-card transition-all duration-300", "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", "lg:hover:-translate-y-2 lg:hover:scale-[1.015] lg:hover:border-primary/45 lg:hover:shadow-brand")}>
                 <FallbackBadge ngonNguThucTe={service.language} ngonNguNguoiDung={lang} />
                 <div className="relative z-10 mb-5 flex items-start justify-between gap-4">
                   <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-primary/10"><DynamicIcon iconData={service.icon} className="size-6 text-primary" /></div>
@@ -76,7 +76,7 @@ export function ServiceListContent({ danhSachDichVu, lang, dict }: ServiceListCo
                   {Array.isArray(service.tags) && service.tags.length > 0 && <div className="mt-5 flex flex-wrap gap-2">{service.tags.slice(0, 2).map((tag: string) => <span key={tag} className="rounded-full border border-border/70 bg-secondary/60 px-2.5 py-1 text-xs font-medium text-muted-foreground">{tag}</span>)}</div>}
                   <span className="mt-6 inline-flex min-h-11 items-center gap-2 self-start text-sm font-semibold text-primary">{dict.services?.read_more || dict.common?.read_more}<ArrowRight className="size-4" aria-hidden="true" /></span>
                 </div>
-              </Link>
+              </SmartPrefetchLink>
             </motion.article>
           ))}
         </AnimatePresence>
