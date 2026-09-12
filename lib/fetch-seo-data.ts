@@ -3,8 +3,12 @@ import { sanityClient } from "@/lib/sanity-client"
 export type PageIdentifier = 'home' | 'about' | 'contact' | 'servicesHub' | 'productsHub' | string
 
 export async function fetchSeoData(language: string, identifier: PageIdentifier) {
-  const query = `
-    *[_type == "seoPageConfig" && pageIdentifier == $identifier && language == $language][0] {
+  return sanityClient.fetch(
+    `coalesce(
+      *[_type == "seoPageConfig" && pageIdentifier == $identifier && language == $language][0],
+      *[_type == "seoPageConfig" && pageIdentifier == $identifier && language == "en"][0],
+      *[_type == "seoPageConfig" && pageIdentifier == $identifier && language == "vi"][0]
+    ) {
       metaTitle,
       metaDescription,
       openGraphImage {
@@ -12,11 +16,8 @@ export async function fetchSeoData(language: string, identifier: PageIdentifier)
       },
       heroHeading,
       mainContent
-    }
-  `
-
-  let data = await sanityClient.fetch(query, { language, identifier })
-  if (!data) data = await sanityClient.fetch(query, { language: 'en', identifier })
-  if (!data) data = await sanityClient.fetch(query, { language: 'vi', identifier })
-  return data
+    }`,
+    { language, identifier },
+    { next: { revalidate: 60, tags: [`seo-page-${identifier}`] } },
+  )
 }
