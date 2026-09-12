@@ -16,17 +16,11 @@ function TextSocialIcon({ text }: { text: string }) { return <span className="te
 interface FooterProps {
   lang: string
   dict: any
-  persistent?: boolean
   initialServices?: FooterService[]
   initialLegalDocs?: LegalDocLink[]
 }
 
-export function Footer(props: FooterProps) {
-  if (!props.persistent) return null
-  return <PersistentFooter {...props} />
-}
-
-function PersistentFooter({ lang, dict, initialServices = [], initialLegalDocs = [] }: FooterProps) {
+export function Footer({ lang, dict, initialServices = [], initialLegalDocs = [] }: FooterProps) {
   const footer = dict?.footer || {}
   const navigation = dict?.navigation || {}
   const common = dict?.common || {}
