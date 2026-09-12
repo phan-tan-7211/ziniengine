@@ -191,7 +191,7 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
 
         <div className="relative z-10 pt-20 lg:pt-24">
           <HeroSection dict={dictionary} lang={lang} />
-          <AboutSummary dict={dictionary} lang={lang} />
+          <AboutSummary dict={dictionary} lang={lang} siteName={siteName} />
           <FeaturedProjects
             dict={dictionary}
             projects={latestProjects}
