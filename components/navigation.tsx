@@ -24,6 +24,13 @@ interface NavigationProps {
   initialServices?: ServiceMenuItem[]
 }
 
+function canPrefetch() {
+  if (typeof navigator === "undefined") return false
+  const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection
+  if (connection?.saveData) return false
+  return connection?.effectiveType !== "slow-2g" && connection?.effectiveType !== "2g"
+}
+
 export function Navigation({ lang, dict, initialServices = [] }: NavigationProps) {
   const reduceMotion = useReducedMotion()
   const [isScrolled, setIsScrolled] = useState(false)
@@ -122,6 +129,14 @@ export function Navigation({ lang, dict, initialServices = [] }: NavigationProps
     { name: dict.navigation.contact, href: `/${lang}/contact` },
   ]
 
+  useEffect(() => {
+    if (!canPrefetch()) return
+    const currentIndex = menuItems.findIndex((item) => item.href === `/${lang}` ? pathname === item.href : pathname.startsWith(item.href))
+    const candidates = [menuItems[currentIndex - 1]?.href, menuItems[currentIndex + 1]?.href].filter(Boolean) as string[]
+    const timer = window.setTimeout(() => candidates.forEach((href) => router.prefetch(href)), 120)
+    return () => window.clearTimeout(timer)
+  }, [pathname, lang])
+
   const handlePrefetchLang = (targetLang: string) => {
     const segments = pathname.split("/")
     segments[1] = targetLang
@@ -147,11 +162,7 @@ export function Navigation({ lang, dict, initialServices = [] }: NavigationProps
         isScrolled ? "border-b border-border/60 bg-background/92 shadow-soft backdrop-blur-xl" : "bg-background/35 backdrop-blur-sm lg:bg-transparent lg:backdrop-blur-none"
       )}
     >
-      <motion.div
-        initial={reduceMotion ? false : { y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.45 }}
-      >
+      <motion.div initial={reduceMotion ? false : { y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.45 }}>
         <div className="hidden overflow-visible lg:block">
           <DesktopNavigation
             lang={lang}
@@ -171,33 +182,19 @@ export function Navigation({ lang, dict, initialServices = [] }: NavigationProps
         </div>
 
         <div className="content-shell flex min-h-16 items-center justify-between gap-2 py-2 lg:hidden">
-          <Link href={`/${lang}`} aria-label={dict.navigation.home || "Home"} className="relative z-[110] flex min-h-11 shrink-0 items-center gap-2 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Link href={`/${lang}`} prefetch aria-label={dict.navigation.home || "Home"} className="relative z-[110] flex min-h-11 shrink-0 items-center gap-2 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <SiteLogoMark size="sm" />
-            <SiteLogoWordmark
-              lang={lang}
-              fallbackTagline={dict.common.logo_subtitle}
-              className="hidden min-[390px]:block"
-              titleClassName="text-base font-bold tracking-tight text-foreground"
-              hideTagline
-            />
+            <SiteLogoWordmark lang={lang} fallbackTagline={dict.common.logo_subtitle} className="hidden min-[390px]:block" titleClassName="text-base font-bold tracking-tight text-foreground" hideTagline />
           </Link>
 
           <div
             ref={mobileMainMenuRef}
             className="relative flex h-11 flex-1 items-center gap-1 overflow-x-auto rounded-2xl border border-border/60 bg-card/70 px-1.5 no-scrollbar shadow-soft backdrop-blur-lg touch-pan-x"
-            style={{
-              WebkitMaskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
-              maskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
-            }}
+            style={{ WebkitMaskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)", maskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)" }}
           >
             {menuItems.map((item, index) => {
               const active = pathname === item.href || (item.href !== `/${lang}` && pathname.startsWith(item.href))
-              const Icon = item.name === dict.navigation.home ? LucideIcons.Home :
-                item.name === dict.navigation.about ? LucideIcons.Info :
-                item.name === dict.navigation.services ? LucideIcons.Settings :
-                item.name === dict.navigation.products ? LucideIcons.Package :
-                item.name === dict.navigation.projects ? LucideIcons.Briefcase :
-                item.name === dict.navigation.blog ? LucideIcons.FileText : LucideIcons.Phone
+              const Icon = item.name === dict.navigation.home ? LucideIcons.Home : item.name === dict.navigation.about ? LucideIcons.Info : item.name === dict.navigation.services ? LucideIcons.Settings : item.name === dict.navigation.products ? LucideIcons.Package : item.name === dict.navigation.projects ? LucideIcons.Briefcase : item.name === dict.navigation.blog ? LucideIcons.FileText : LucideIcons.Phone
 
               return (
                 <button
@@ -205,14 +202,13 @@ export function Navigation({ lang, dict, initialServices = [] }: NavigationProps
                   type="button"
                   data-active={active}
                   aria-label={item.name}
+                  onPointerDown={() => { if (canPrefetch()) router.prefetch(item.href) }}
+                  onFocus={() => { if (canPrefetch()) router.prefetch(item.href) }}
                   onClick={() => {
                     if (navigator.vibrate) navigator.vibrate(15)
                     router.push(item.href)
                   }}
-                  className={cn(
-                    "relative flex h-9 min-w-[58px] shrink-0 flex-col items-center justify-center rounded-xl px-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    active ? "bg-primary/10 text-primary" : "text-muted-foreground active:bg-secondary hover:text-foreground"
-                  )}
+                  className={cn("relative flex h-9 min-w-[58px] shrink-0 flex-col items-center justify-center rounded-xl px-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", active ? "bg-primary/10 text-primary" : "text-muted-foreground active:bg-secondary hover:text-foreground")}
                 >
                   <Icon className="mb-0.5 size-3.5" strokeWidth={active ? 2.5 : 2} aria-hidden="true" />
                   <span className="max-w-[56px] truncate text-[8px] font-bold uppercase tracking-tight">{item.name}</span>
@@ -221,18 +217,20 @@ export function Navigation({ lang, dict, initialServices = [] }: NavigationProps
             })}
           </div>
 
-          <div className="relative z-[110] shrink-0">
-            <MobileNavigation
-              lang={lang}
-              dict={dict}
-              pathname={pathname}
-              isMobileMenuOpen={isMobileMenuOpen}
-              setIsMobileMenuOpen={setIsMobileMenuOpen}
-              handleLangChange={handleLangChange}
-              menuItems={menuItems}
-              serviceItems={services}
-            />
-          </div>
+          <MobileNavigation
+            lang={lang}
+            dict={dict}
+            pathname={pathname}
+            isMobileMenuOpen={isMobileMenuOpen}
+            isLangOpen={isLangOpen}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
+            setIsLangOpen={setIsLangOpen}
+            handleLangChange={handleLangChange}
+            handlePrefetchLang={handlePrefetchLang}
+            menuItems={menuItems}
+            serviceItems={services}
+            currentLang={currentLang}
+          />
         </div>
       </motion.div>
     </header>
