@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import Image from "next/image"
 import { motion, useInView, useReducedMotion } from "framer-motion"
 import Link from "next/link"
 import { ArrowRight, CheckCircle2, ChevronRight, Home, Phone } from "lucide-react"
@@ -34,7 +35,7 @@ interface RelatedService {
   description: string
   icon: any
 }
-interface ServicePageContentProps { service: Service; relatedServices: RelatedService[]; lang: string; dict: any }
+interface ServicePageContentProps { service: Service; relatedServices?: RelatedService[] | null; lang: string; dict: any }
 
 export function ServicePageContent({ service, relatedServices, lang, dict }: ServicePageContentProps) {
   const { phoneTel } = useSiteSettings()
@@ -76,29 +77,19 @@ export function ServicePageContent({ service, relatedServices, lang, dict }: Ser
           >
             <div className="flex min-w-0 items-center gap-2">
               <Home className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              <Link
-                href={`/${lang}`}
-                className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              >
+              <Link href={`/${lang}`} className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
                 {dict?.common?.home || "Trang chủ"}
               </Link>
             </div>
             <div className="flex min-w-0 items-center gap-2">
               <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden="true" />
-              <Link
-                href={`/${lang}/services`}
-                className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              >
+              <Link href={`/${lang}/services`} className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
                 {dict?.navigation?.services || "Dịch vụ"}
               </Link>
             </div>
             <div className="flex min-w-0 items-center gap-2">
               <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden="true" />
-              <span
-                className="max-w-[70vw] truncate font-medium text-primary"
-                aria-current="page"
-                title={service.shortTitle || service.title}
-              >
+              <span className="max-w-[70vw] truncate font-medium text-primary" aria-current="page" title={service.shortTitle || service.title}>
                 {service.shortTitle || service.title}
               </span>
             </div>
@@ -131,20 +122,21 @@ export function ServicePageContent({ service, relatedServices, lang, dict }: Ser
 
             <motion.div initial={shouldReduceMotion ? false : { opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.7, delay: 0.18 }} className="relative">
               <div className="relative aspect-[4/3] overflow-hidden rounded-[var(--radius-card)] border border-primary/30 bg-card shadow-card">
-                <img src={service.image || "/placeholder.svg"} alt={service.title} className="h-full w-full object-cover transition-transform duration-700 lg:hover:scale-[1.035]" />
+                <Image
+                  src={service.image || "/placeholder.svg"}
+                  alt={service.title}
+                  fill
+                  priority
+                  sizes="(max-width: 1023px) 100vw, 45vw"
+                  className="object-cover transition-transform duration-700 lg:hover:scale-[1.035]"
+                />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" aria-hidden="true" />
               </div>
             </motion.div>
           </div>
         </div>
-        <div
-          className="pointer-events-none absolute left-8 top-32 hidden size-24 border-l border-t border-primary/20 lg:block"
-          aria-hidden="true"
-        />
-        <div
-          className="pointer-events-none absolute bottom-8 right-8 hidden size-24 border-b border-r border-border/70 lg:block"
-          aria-hidden="true"
-        />
+        <div className="pointer-events-none absolute left-8 top-32 hidden size-24 border-l border-t border-primary/20 lg:block" aria-hidden="true" />
+        <div className="pointer-events-none absolute bottom-8 right-8 hidden size-24 border-b border-r border-border/70 lg:block" aria-hidden="true" />
       </section>
 
       <section ref={sectionRef} className="section-space relative bg-background">
@@ -202,15 +194,12 @@ export function ServicePageContent({ service, relatedServices, lang, dict }: Ser
         </section>
       )}
 
-      {relatedServices.length > 0 && (
+      {relatedServices && relatedServices.length > 0 && (
         <section className="section-space bg-background">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mb-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{dict?.navigation?.services || "Dịch vụ"}</p><h2 className="mt-2 font-serif text-3xl font-bold text-foreground sm:text-4xl">{service.labels?.relatedTitle || "Dịch vụ liên quan"}</h2></div>
-              <DetailCollectionLink
-                href={`/${lang}/services`}
-                label={dict?.navigation?.view_all_services || "Xem tất cả dịch vụ kỹ thuật"}
-              />
+              <DetailCollectionLink href={`/${lang}/services`} label={dict?.navigation?.view_all_services || "Xem tất cả dịch vụ kỹ thuật"} />
             </div>
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {relatedServices.map((related, index) => (
@@ -227,13 +216,10 @@ export function ServicePageContent({ service, relatedServices, lang, dict }: Ser
         </section>
       )}
 
-      {relatedServices.length === 0 && (
+      {relatedServices && relatedServices.length === 0 && (
         <section className="border-t border-border/50 bg-background py-10 sm:py-12">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <DetailCollectionLink
-              href={`/${lang}/services`}
-              label={dict?.navigation?.view_all_services || "Xem tất cả dịch vụ kỹ thuật"}
-            />
+            <DetailCollectionLink href={`/${lang}/services`} label={dict?.navigation?.view_all_services || "Xem tất cả dịch vụ kỹ thuật"} />
           </div>
         </section>
       )}
