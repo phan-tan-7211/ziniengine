@@ -56,91 +56,82 @@ function normalizeRelatedService(service: RawService | null) {
 }
 
 const layChiTietDichVu = cache(async (slug: string, lang: string) => {
-  const source = await sanityClient.fetch(
-    `*[_type == "service" && slug.current == $slug && !(_id in path("drafts.**"))][0] {
+  const service = await sanityClient.fetch(
+    `coalesce(
+      *[
+        _type == "service" &&
+        language == $lang &&
+        !(_id in path("drafts.**")) &&
+        (
+          slug.current == $slug ||
+          (defined(_translationKey) && _translationKey == *[_type == "service" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey)
+        )
+      ][0],
+      *[
+        _type == "service" &&
+        language == "en" &&
+        !(_id in path("drafts.**")) &&
+        (
+          slug.current == $slug ||
+          (defined(_translationKey) && _translationKey == *[_type == "service" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey)
+        )
+      ][0],
+      *[
+        _type == "service" &&
+        language == "vi" &&
+        !(_id in path("drafts.**")) &&
+        (
+          slug.current == $slug ||
+          (defined(_translationKey) && _translationKey == *[_type == "service" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey)
+        )
+      ][0],
+      *[_type == "service" && slug.current == $slug && !(_id in path("drafts.**"))][0]
+    ) {
       _id,
       _translationKey,
-      language
+      title,
+      shortTitle,
+      "slug": slug.current,
+      icon,
+      description,
+      "image": coalesce(image.asset->url, image),
+      "tags": coalesce(tags, []),
+      "features": coalesce(features, []),
+      "specs": coalesce(specs, []),
+      "process": coalesce(process, []),
+      "labels": coalesce(labels, {
+        "featuresTitle": "Tính năng nổi bật",
+        "specsTitle": "Thông số kỹ thuật",
+        "processTitle": "Quy trình làm việc",
+        "relatedTitle": "Dịch vụ liên quan"
+      }),
+      language,
+      "banDichTuongUng": select(
+        defined(_translationKey) => *[
+          _type == "service" &&
+          _translationKey == ^._translationKey &&
+          defined(slug.current) &&
+          !(_id in path("drafts.**"))
+        ] { language, "slug": slug.current },
+        []
+      )
     }`,
-    { slug }
+    { slug, lang }
   )
-
-  if (!source) return null
-
-  const query = source._translationKey
-    ? `coalesce(
-        *[_type == "service" && _translationKey == $translationKey && language == $lang && !(_id in path("drafts.**"))][0],
-        *[_type == "service" && _translationKey == $translationKey && language == "en" && !(_id in path("drafts.**"))][0],
-        *[_type == "service" && _translationKey == $translationKey && language == "vi" && !(_id in path("drafts.**"))][0],
-        *[_type == "service" && slug.current == $slug && !(_id in path("drafts.**"))][0]
-      ) {
-        _id,
-        _translationKey,
-        title,
-        shortTitle,
-        "slug": slug.current,
-        icon,
-        description,
-        "image": coalesce(image.asset->url, image),
-        "tags": coalesce(tags, []),
-        "features": coalesce(features, []),
-        "specs": coalesce(specs, []),
-        "process": coalesce(process, []),
-        "labels": coalesce(labels, {
-          "featuresTitle": "Tính năng nổi bật",
-          "specsTitle": "Thông số kỹ thuật",
-          "processTitle": "Quy trình làm việc",
-          "relatedTitle": "Dịch vụ liên quan"
-        }),
-        language,
-        "banDichTuongUng": *[_type == "service" && _translationKey == ^._translationKey && defined(slug.current) && !(_id in path("drafts.**"))] {
-          language,
-          "slug": slug.current
-        }
-      }`
-    : `*[_type == "service" && slug.current == $slug && !(_id in path("drafts.**"))][0] {
-        _id,
-        _translationKey,
-        title,
-        shortTitle,
-        "slug": slug.current,
-        icon,
-        description,
-        "image": coalesce(image.asset->url, image),
-        "tags": coalesce(tags, []),
-        "features": coalesce(features, []),
-        "specs": coalesce(specs, []),
-        "process": coalesce(process, []),
-        "labels": coalesce(labels, {
-          "featuresTitle": "Tính năng nổi bật",
-          "specsTitle": "Thông số kỹ thuật",
-          "processTitle": "Quy trình làm việc",
-          "relatedTitle": "Dịch vụ liên quan"
-        }),
-        language,
-        "banDichTuongUng": []
-      }`
-
-  const service = await sanityClient.fetch(query, {
-    slug,
-    lang,
-    translationKey: source._translationKey || "",
-  })
 
   return normalizeService(service)
 })
 
 async function layDichVuLienQuan(slugHienTai: string, lang: string) {
   const rawServices: RawService[] = await sanityClient.fetch(
-    `*[_type == "service" && defined(slug.current) && slug.current != $slugHienTai && !(_id in path("drafts.**"))] | order(orderRank asc, _createdAt desc) {
+    `*[_type == "service" && defined(slug.current) && slug.current != $slugHienTai && !(_id in path("drafts.**"))] | order(orderRank asc, _createdAt desc)[0...24] {
       _id,
       _translationKey,
       language,
       title,
       description,
       "slug": slug.current,
-      icon,
-      "image": coalesce(image.asset->url, image)
+      icon
     }`,
     { slugHienTai }
   )
@@ -165,6 +156,7 @@ async function layDichVuLienQuan(slugHienTai: string, lang: string) {
       const normalized = normalizeRelatedService(item)
       return normalized ? [normalized] : []
     })
+    .slice(0, 4)
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string; slug: string }> }) {
