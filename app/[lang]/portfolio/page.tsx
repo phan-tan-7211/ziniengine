@@ -1,4 +1,3 @@
-import { Footer } from "@/components/footer"
 import { BlueprintBackground } from "@/components/blueprint-background"
 import { PortfolioListContent } from "@/components/portfolio-list-content"
 import { PageHeader } from "@/components/page-header"
@@ -35,5 +34,5 @@ export default async function PortfolioPage({params}:{params:Promise<{lang:strin
   const [dict,data,siteName]=await Promise.all([getDictionary(lang),layDuLieuPortfolio(lang),getSiteName()])
   const siteUrl=getPublicSiteUrl()
   const jsonLd={"@context":"https://schema.org","@type":"ItemList",name:dict.portfolio?.title||`${siteName} Projects`,description:dict.portfolio?.description,itemListElement:data.projects.map((project:any,index:number)=>({"@type":"ListItem",position:index+1,url:`${siteUrl}/${lang}/portfolio/${project.slug}`,name:project.title,description:project.description,image:project.image?.url}))}
-  return <main className="relative min-h-dvh bg-background text-foreground"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/><div className="pointer-events-none absolute inset-0 z-0 opacity-25 dark:opacity-45" aria-hidden="true"><BlueprintBackground/></div><div className="relative z-10"><PageHeader title={dict.portfolio?.title} description={dict.portfolio?.description} subtitle={dict.portfolio?.subtitle} lang={lang} dict={dict}/><section className="relative z-10 pb-24 sm:pb-28 lg:pb-32"><PortfolioListContent projects={data.projects} categories={data.categories as any} lang={lang} dict={dict}/></section></div><Footer lang={lang} dict={dict}/></main>
+  return <main className="relative min-h-dvh bg-background text-foreground"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/><div className="pointer-events-none absolute inset-0 z-0 opacity-25 dark:opacity-45" aria-hidden="true"><BlueprintBackground/></div><div className="relative z-10"><PageHeader title={dict.portfolio?.title} description={dict.portfolio?.description} subtitle={dict.portfolio?.subtitle} lang={lang} dict={dict}/><section className="relative z-10 pb-24 sm:pb-28 lg:pb-32"><PortfolioListContent projects={data.projects} categories={data.categories as any} lang={lang} dict={dict}/></section></div></main>
 }
