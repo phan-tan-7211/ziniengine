@@ -9,6 +9,7 @@ import { SmartPrefetchLink } from "@/components/smart-prefetch-link"
 import { DynamicIcon } from "@/components/ui/dynamic-icon"
 import { sanityClient } from "@/lib/sanity-client"
 import { getPublicSiteUrl } from "@/lib/runtime-config"
+import { getLocalizedServiceCatalog } from "@/lib/service-catalog"
 
 type RawService = Record<string, any>
 
@@ -42,19 +43,6 @@ function normalizeService(service: RawService | null) {
     banDichTuongUng: Array.isArray(service.banDichTuongUng)
       ? service.banDichTuongUng.filter((item: any) => item && typeof item.language === "string" && typeof item.slug === "string")
       : [],
-  }
-}
-
-function normalizeRelatedService(service: RawService | null) {
-  if (!service) return null
-
-  return {
-    _id: typeof service._id === "string" ? service._id : "",
-    _translationKey: typeof service._translationKey === "string" ? service._translationKey : undefined,
-    title: typeof service.title === "string" ? service.title : "Dịch vụ",
-    slug: typeof service.slug === "string" ? service.slug : "",
-    description: typeof service.description === "string" ? service.description : "",
-    icon: service.icon,
   }
 }
 
@@ -119,54 +107,17 @@ const layChiTietDichVu = cache(async (slug: string, lang: string) => {
         []
       )
     }`,
-    { slug, lang }
+    { slug, lang },
   )
 
   return normalizeService(service)
 })
 
-async function layDichVuLienQuan(slugHienTai: string, lang: string) {
-  const rawServices: RawService[] = await sanityClient.fetch(
-    `*[_type == "service" && defined(slug.current) && slug.current != $slugHienTai && !(_id in path("drafts.**"))] | order(orderRank asc, _createdAt desc)[0...24] {
-      _id,
-      _translationKey,
-      language,
-      title,
-      description,
-      "slug": slug.current,
-      icon
-    }`,
-    { slugHienTai }
-  )
-
-  const groups: Record<string, RawService[]> = {}
-  rawServices.forEach((item) => {
-    const key = item._translationKey || item._id
-    if (!groups[key]) groups[key] = []
-    groups[key].push(item)
-  })
-
-  return Object.values(groups)
-    .map(
-      (group) =>
-        group.find((item) => item.language === lang) ||
-        group.find((item) => item.language === "en") ||
-        group.find((item) => item.language === "vi") ||
-        group[0]
-    )
-    .filter(Boolean)
-    .flatMap((item) => {
-      const normalized = normalizeRelatedService(item)
-      return normalized ? [normalized] : []
-    })
-    .slice(0, 4)
-}
-
 async function RelatedServices({ service, lang, dict }: { service: any; lang: string; dict: any }) {
-  const relatedCandidates = await layDichVuLienQuan(service.slug, lang)
+  const serviceCatalog = await getLocalizedServiceCatalog(lang)
   const currentGroupKey = service._translationKey || service._id
-  const relatedServices = relatedCandidates
-    .filter((item) => (item._translationKey || item._id) !== currentGroupKey)
+  const relatedServices = serviceCatalog
+    .filter((item) => item.groupKey !== currentGroupKey && item.slug !== service.slug)
     .slice(0, 3)
 
   if (relatedServices.length === 0) {
@@ -190,9 +141,9 @@ async function RelatedServices({ service, lang, dict }: { service: any; lang: st
           <DetailCollectionLink href={`/${lang}/services`} label={dict?.navigation?.view_all_services || "Xem tất cả dịch vụ kỹ thuật"} />
         </div>
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {relatedServices.map((related, index) => (
+          {relatedServices.map((related) => (
             <SmartPrefetchLink
-              key={`${related.slug}-${index}`}
+              key={related.groupKey || related._id || related.slug}
               href={`/${lang}/services/${related.slug}`}
               className="group flex h-full min-h-44 flex-col rounded-2xl border border-border/60 bg-card p-6 shadow-soft transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hover:-translate-y-2 lg:hover:scale-[1.015] lg:hover:border-primary/35 lg:hover:shadow-card"
             >
@@ -297,7 +248,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   return (
     <main className="min-h-dvh bg-background text-foreground">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <ServicePageContent service={service} relatedServices={null} lang={lang} dict={dict} />
+      <ServicePageContent service={service} lang={lang} dict={dict} />
       <Suspense fallback={<RelatedServicesSkeleton />}>
         <RelatedServices service={service} lang={lang} dict={dict} />
       </Suspense>
