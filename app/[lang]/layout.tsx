@@ -111,10 +111,10 @@ export default async function LanguageLayout({ children, params }: { children: R
     <SiteSettingsProvider value={sharedSettings}>
       <Navigation lang={lang} dict={effectiveDict} initialServices={services} />
       <SmartSwipeWrapper lang={lang} services={servicesSlugs}>
-        <main className="mx-auto min-h-dvh w-full overflow-hidden xl:w-[calc(100%-10rem)] xl:max-w-[1440px] xl:border-x xl:border-border/50 xl:shadow-[0_0_50px_rgba(15,23,42,0.08)] dark:xl:shadow-[0_0_50px_rgba(0,0,0,0.28)]">
+        <div className="mx-auto min-h-dvh w-full overflow-hidden xl:w-[calc(100%-10rem)] xl:max-w-[1440px] xl:border-x xl:border-border/50 xl:shadow-[0_0_50px_rgba(15,23,42,0.08)] dark:xl:shadow-[0_0_50px_rgba(0,0,0,0.28)]">
           {children}
           <Footer lang={lang} dict={effectiveDict} persistent initialServices={services} initialLegalDocs={sharedData.legalDocs} />
-        </main>
+        </div>
       </SmartSwipeWrapper>
       <MobileWidgetIndicator lang={lang} dict={effectiveDict} services={servicesSlugs} />
       <FloatingContactBar />
