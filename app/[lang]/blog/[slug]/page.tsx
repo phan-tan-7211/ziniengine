@@ -5,7 +5,6 @@ import { PortableText } from "@portabletext/react"
 import { ArrowRight, Calendar, ChevronRight, Clock, Home, Tag, User } from "lucide-react"
 import Link from "next/link"
 import { SanityImage } from "@/components/sanity-image"
-import { Footer } from "@/components/footer"
 import { SmartPrefetchLink } from "@/components/smart-prefetch-link"
 import { getSiteName, withSiteName } from "@/lib/site-settings"
 import { sanityClient } from "@/lib/sanity-client"
@@ -17,31 +16,16 @@ const getPost = cache(async (slug: string, lang: string) => {
   return sanityClient.fetch(
     `coalesce(
       *[
-        _type == "blogPost" &&
-        language == $lang &&
-        !(_id in path("drafts.**")) &&
-        (
-          slug.current == $slug ||
-          (defined(_translationKey) && _translationKey == *[_type == "blogPost" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey)
-        )
+        _type == "blogPost" && language == $lang && !(_id in path("drafts.**")) &&
+        (slug.current == $slug || (defined(_translationKey) && _translationKey == *[_type == "blogPost" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey))
       ][0],
       *[
-        _type == "blogPost" &&
-        language == "en" &&
-        !(_id in path("drafts.**")) &&
-        (
-          slug.current == $slug ||
-          (defined(_translationKey) && _translationKey == *[_type == "blogPost" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey)
-        )
+        _type == "blogPost" && language == "en" && !(_id in path("drafts.**")) &&
+        (slug.current == $slug || (defined(_translationKey) && _translationKey == *[_type == "blogPost" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey))
       ][0],
       *[
-        _type == "blogPost" &&
-        language == "vi" &&
-        !(_id in path("drafts.**")) &&
-        (
-          slug.current == $slug ||
-          (defined(_translationKey) && _translationKey == *[_type == "blogPost" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey)
-        )
+        _type == "blogPost" && language == "vi" && !(_id in path("drafts.**")) &&
+        (slug.current == $slug || (defined(_translationKey) && _translationKey == *[_type == "blogPost" && slug.current == $slug && !(_id in path("drafts.**"))][0]._translationKey))
       ][0],
       *[_type == "blogPost" && slug.current == $slug && !(_id in path("drafts.**"))][0]
     ) {
@@ -58,12 +42,7 @@ const getPost = cache(async (slug: string, lang: string) => {
       "mainImage": mainImage.asset->{ _id, url },
       "category": category->{ title, "slug": slug.current },
       "translations": select(
-        defined(_translationKey) => *[
-          _type == "blogPost" &&
-          _translationKey == ^._translationKey &&
-          defined(slug.current) &&
-          !(_id in path("drafts.**"))
-        ] { language, "slug": slug.current },
+        defined(_translationKey) => *[_type == "blogPost" && _translationKey == ^._translationKey && defined(slug.current) && !(_id in path("drafts.**"))] { language, "slug": slug.current },
         []
       )
     }`,
@@ -73,13 +52,7 @@ const getPost = cache(async (slug: string, lang: string) => {
 
 async function getRelated(currentId: string, lang: string) {
   return sanityClient.fetch(
-    `*[
-      _type == "blogPost" &&
-      _id != $currentId &&
-      language == $lang &&
-      defined(slug.current) &&
-      !(_id in path("drafts.**"))
-    ] | order(publishedAt desc)[0...3] {
+    `*[_type == "blogPost" && _id != $currentId && language == $lang && defined(slug.current) && !(_id in path("drafts.**"))] | order(publishedAt desc)[0...3] {
       _id,
       title,
       "slug": slug.current,
@@ -171,18 +144,9 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ lan
         <div className="pointer-events-none absolute left-8 top-32 hidden size-24 border-l border-t border-primary/20 lg:block" aria-hidden="true" />
         <div className="pointer-events-none absolute bottom-8 right-8 hidden size-24 border-b border-r border-border/70 lg:block" aria-hidden="true" />
         <nav className="relative z-10 mb-7 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2 text-sm sm:mb-8" aria-label="Breadcrumb">
-          <div className="flex min-w-0 items-center gap-2">
-            <Home className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-            <Link href={`/${lang}`} className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">{dict.common?.home || "Trang chủ"}</Link>
-          </div>
-          <div className="flex min-w-0 items-center gap-2">
-            <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden="true" />
-            <Link href={`/${lang}/blog`} className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">{dict.navigation?.blog || dict.blog?.title || "Blog"}</Link>
-          </div>
-          <div className="flex min-w-0 items-center gap-2">
-            <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden="true" />
-            <span className="max-w-[70vw] truncate font-medium text-primary" aria-current="page" title={post.title}>{post.title}</span>
-          </div>
+          <div className="flex min-w-0 items-center gap-2"><Home className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /><Link href={`/${lang}`} className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">{dict.common?.home || "Trang chủ"}</Link></div>
+          <div className="flex min-w-0 items-center gap-2"><ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden="true" /><Link href={`/${lang}/blog`} className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">{dict.navigation?.blog || dict.blog?.title || "Blog"}</Link></div>
+          <div className="flex min-w-0 items-center gap-2"><ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden="true" /><span className="max-w-[70vw] truncate font-medium text-primary" aria-current="page" title={post.title}>{post.title}</span></div>
         </nav>
 
         <header className="mx-auto max-w-4xl text-center">
@@ -196,13 +160,8 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ lan
           </div>
         </header>
 
-        <div className="mx-auto mt-10 max-w-5xl overflow-hidden rounded-3xl border border-border/70 shadow-card">
-          <div className="relative aspect-[16/9]"><SanityImage imageData={post.mainImage} alt={post.title} width={1600} height={900} className="h-full w-full object-cover" priority /></div>
-        </div>
-
-        <div className="prose prose-slate mx-auto mt-14 max-w-3xl dark:prose-invert prose-headings:font-serif prose-a:text-primary prose-p:leading-8">
-          <PortableText value={Array.isArray(post.body) ? post.body : []} />
-        </div>
+        <div className="mx-auto mt-10 max-w-5xl overflow-hidden rounded-3xl border border-border/70 shadow-card"><div className="relative aspect-[16/9]"><SanityImage imageData={post.mainImage} alt={post.title} width={1600} height={900} className="h-full w-full object-cover" priority /></div></div>
+        <div className="prose prose-slate mx-auto mt-14 max-w-3xl dark:prose-invert prose-headings:font-serif prose-a:text-primary prose-p:leading-8"><PortableText value={Array.isArray(post.body) ? post.body : []} /></div>
 
         <div className="mx-auto mt-14 flex max-w-3xl flex-col gap-3 border-t border-border pt-8 sm:flex-row sm:justify-between">
           <Link href={`/${lang}/blog`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-primary/35 px-5 text-sm font-semibold text-primary transition-all hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{dict.news_section?.view_all || "View all articles"}<ArrowRight className="size-4" aria-hidden="true" /></Link>
@@ -213,7 +172,6 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ lan
           <RelatedArticles post={post} lang={lang} dict={dict} />
         </Suspense>
       </article>
-      <Footer lang={lang} dict={dict} />
     </main>
   )
 }
