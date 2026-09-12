@@ -12,18 +12,12 @@ import { sanityClient } from "@/lib/sanity-client"
 
 async function getLocalizedServices(lang: string) {
   const items: any[] = await sanityClient.fetch(`
-    *[_type == "service" && defined(slug.current) && !(_id in path("drafts.**"))] | order(orderRank asc) {
+    *[_type == "service" && language == $lang && defined(slug.current) && !(_id in path("drafts.**"))] | order(orderRank asc) {
       _id, _translationKey, "slug": slug.current, icon, language, title, "desc": description, orderRank
     }
-  `)
-  const groups: Record<string, any[]> = {}
-  items.forEach((item: any) => {
-    const key = item._translationKey || item._id
-    if (!groups[key]) groups[key] = []
-    groups[key].push(item)
-  })
-  return Object.values(groups)
-    .map((group: any[]) => group.find((item) => item.language === lang) || group.find((item) => item.language === 'en') || group.find((item) => item.language === 'vi') || group[0])
+  `, { lang })
+
+  return items
     .sort((a, b) => (a.orderRank || 0) - (b.orderRank || 0))
     .map((service) => ({ slug: service.slug, icon: service.icon, language: service.language, title: service.title, desc: service.desc }))
 }
@@ -32,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const { lang } = await params
   const [dict, siteSettings] = await Promise.all([getDictionary(lang), getSiteSettings()])
   const siteName = resolveSiteName(siteSettings)
-  const cleanDescription = typeof dict.hero?.description === 'string' ? dict.hero.description.replace(/<[^>]*>?/gm, '') : `${siteName} - website chính thức.`
+  const cleanDescription = typeof dict.hero?.description === 'string' ? dict.hero.description.replace(/<[^>]*>?/gm, '') : `${siteName}`
   const siteTitle = `${siteName} - ${dict.hero?.title_line1 || ''} ${dict.hero?.title_highlight || ''}`.trim()
   return {
     metadataBase: new URL(getPublicSiteUrl()),
