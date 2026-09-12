@@ -6,7 +6,6 @@ import { motion, useInView, useReducedMotion } from "framer-motion"
 import Link from "next/link"
 import { ArrowRight, CheckCircle2, ChevronRight, Home, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { DetailCollectionLink } from "@/components/detail-collection-link"
 import { DynamicIcon } from "./ui/dynamic-icon"
 import { useSiteSettings } from "@/components/site-settings-context"
 
@@ -28,16 +27,9 @@ interface Service {
   labels?: { featuresTitle?: string; specsTitle?: string; processTitle?: string; relatedTitle?: string }
   banDichTuongUng?: BanDichTuongUng[]
 }
-interface RelatedService {
-  _id: string
-  title: string
-  slug: string
-  description: string
-  icon: any
-}
-interface ServicePageContentProps { service: Service; relatedServices?: RelatedService[] | null; lang: string; dict: any }
+interface ServicePageContentProps { service: Service; lang: string; dict: any }
 
-export function ServicePageContent({ service, relatedServices, lang, dict }: ServicePageContentProps) {
+export function ServicePageContent({ service, lang, dict }: ServicePageContentProps) {
   const { phoneTel } = useSiteSettings()
   const sectionRef = useRef(null)
   const inView = useInView(sectionRef, { once: true, margin: "-80px" })
@@ -190,36 +182,6 @@ export function ServicePageContent({ service, relatedServices, lang, dict }: Ser
                 ))}
               </div>
             </div>
-          </div>
-        </section>
-      )}
-
-      {relatedServices && relatedServices.length > 0 && (
-        <section className="section-space bg-background">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="mb-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{dict?.navigation?.services || "Dịch vụ"}</p><h2 className="mt-2 font-serif text-3xl font-bold text-foreground sm:text-4xl">{service.labels?.relatedTitle || "Dịch vụ liên quan"}</h2></div>
-              <DetailCollectionLink href={`/${lang}/services`} label={dict?.navigation?.view_all_services || "Xem tất cả dịch vụ kỹ thuật"} />
-            </div>
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {relatedServices.map((related, index) => (
-                <motion.div key={`related-${related.slug}-${index}`} initial={shouldReduceMotion ? false : { opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.45, delay: index * 0.07 }}>
-                  <Link href={`/${lang}/services/${related.slug}`} className="group flex h-full min-h-44 flex-col rounded-2xl border border-border/60 bg-card p-6 shadow-soft transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hover:-translate-y-2 lg:hover:scale-[1.015] lg:hover:border-primary/35 lg:hover:shadow-card">
-                    <div className="mb-5 flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all lg:group-hover:rotate-6 lg:group-hover:scale-110 lg:group-hover:bg-primary lg:group-hover:text-primary-foreground"><DynamicIcon iconData={related.icon} className="size-6" /></div>
-                    <h3 className="font-serif text-lg font-bold text-foreground transition-colors lg:group-hover:text-primary">{related.title}</h3><p className="mt-2 line-clamp-2 flex-1 text-sm leading-6 text-muted-foreground">{related.description}</p>
-                    <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-primary">{dict?.services?.read_more || "Tìm hiểu thêm"}<ArrowRight className="size-4 transition-transform lg:group-hover:translate-x-1.5" aria-hidden="true" /></span>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {relatedServices && relatedServices.length === 0 && (
-        <section className="border-t border-border/50 bg-background py-10 sm:py-12">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <DetailCollectionLink href={`/${lang}/services`} label={dict?.navigation?.view_all_services || "Xem tất cả dịch vụ kỹ thuật"} />
           </div>
         </section>
       )}
