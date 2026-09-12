@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react"
 import { usePathname, useRouter } from "next/navigation"
 
 const prefetchedAt = new Map<string, number>()
-const PREFETCH_TTL_MS = 5 * 60 * 1000
+const PREFETCH_TTL_MS = 60 * 1000
 const MAX_VIEWPORT_PREFETCH_PER_PAGE = 8
 let budgetPathname = ""
 let viewportPrefetchCount = 0
@@ -18,14 +18,9 @@ type SmartPrefetchLinkProps = ComponentProps<typeof Link> & {
 
 function shouldPrefetch() {
   if (typeof navigator === "undefined") return false
-
-  const connection = (navigator as Navigator & {
-    connection?: { saveData?: boolean; effectiveType?: string }
-  }).connection
-
+  const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection
   if (connection?.saveData) return false
   if (connection?.effectiveType === "slow-2g" || connection?.effectiveType === "2g") return false
-
   return true
 }
 
@@ -42,7 +37,6 @@ function claimViewportBudget(pathname: string) {
     budgetPathname = pathname
     viewportPrefetchCount = 0
   }
-
   if (viewportPrefetchCount >= MAX_VIEWPORT_PREFETCH_PER_PAGE) return false
   viewportPrefetchCount += 1
   return true
@@ -50,7 +44,7 @@ function claimViewportBudget(pathname: string) {
 
 export function SmartPrefetchLink({
   href,
-  intentDelayMs = 70,
+  intentDelayMs = 55,
   viewportPrefetch = true,
   onMouseEnter,
   onMouseLeave,
@@ -68,8 +62,8 @@ export function SmartPrefetchLink({
 
   const prefetchNow = () => {
     if (!hrefString.startsWith("/") || !shouldPrefetch() || isFreshPrefetch(hrefString)) return
-    prefetchedAt.set(hrefString, Date.now())
     router.prefetch(hrefString)
+    prefetchedAt.set(hrefString, Date.now())
   }
 
   const schedulePrefetch = () => {
@@ -108,12 +102,9 @@ export function SmartPrefetchLink({
           return
         }
 
-        const schedule = (window as Window & {
-          requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
-        }).requestIdleCallback
-
-        if (schedule) schedule(prefetchNow, { timeout: 500 })
-        else window.setTimeout(prefetchNow, 50)
+        const schedule = (window as Window & { requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number }).requestIdleCallback
+        if (schedule) schedule(prefetchNow, { timeout: 350 })
+        else window.setTimeout(prefetchNow, 35)
         observer.disconnect()
       },
       { rootMargin: "500px 0px" },
