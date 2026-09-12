@@ -4,7 +4,6 @@ import { ArrowRight } from "lucide-react"
 import { ServicePageContent } from "@/components/service-page-content"
 import { getDictionary } from "@/lib/get-dictionary"
 import { getSiteName, withSiteName } from "@/lib/site-settings"
-import { Footer } from "@/components/footer"
 import { DetailCollectionLink } from "@/components/detail-collection-link"
 import { SmartPrefetchLink } from "@/components/smart-prefetch-link"
 import { DynamicIcon } from "@/components/ui/dynamic-icon"
@@ -302,7 +301,6 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
       <Suspense fallback={<RelatedServicesSkeleton />}>
         <RelatedServices service={service} lang={lang} dict={dict} />
       </Suspense>
-      <Footer lang={lang} dict={dict} />
     </main>
   )
 }
