@@ -16,6 +16,7 @@
     "description": "Feedback from partners who have accompanied ZINITEK over the years.",
     "trusted_by": "Trusted by leading enterprises"
   },
+  "catalog_sidebar": {"title":"Catalog","viewAll":"View all"},
   "navigation": {
     "home": "Home",
     "about": "About Us",
