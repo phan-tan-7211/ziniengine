@@ -16,6 +16,7 @@
     "description": "多年来与 ZINITEK 携手同行的合作伙伴给出的评价。",
     "trusted_by": "深受领先企业的信赖"
   },
+  "catalog_sidebar": {"title":"目录","viewAll":"查看全部"},
   "navigation": {
     "home": "首页",
     "about": "关于我们",
