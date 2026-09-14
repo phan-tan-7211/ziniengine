@@ -1,12 +1,13 @@
 
 "use client"
 
-import { useState, useMemo, useRef } from "react"
+import { useState, useMemo } from "react"
 import Image from "next/image"
 import { ArrowRight, HardHat, Camera, Search, X } from "lucide-react"
 import { FallbackBadge } from "./fallback-badge"
 import { SmartPrefetchLink } from "./smart-prefetch-link"
 import { motion, AnimatePresence } from "framer-motion"
+import { CatalogSidebar, type CatalogFilterItem } from "./catalog-sidebar"
 
 interface ProductListContentProps {
   danhSachSanPham: any[]
@@ -18,46 +19,6 @@ interface ProductListContentProps {
 export function ProductListContent({ danhSachSanPham, danhSachDanhMuc, lang, dict }: ProductListContentProps) {
   const [activeCategoryId, setActiveCategoryId] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-
-  const isDragging = useRef(false)
-  const wasDragging = useRef(false)
-  const startX = useRef(0)
-  const scrollLeft = useRef(0)
-
-  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = scrollContainerRef.current
-    if (!el) return
-    isDragging.current = true
-    wasDragging.current = false
-    startX.current = e.pageX - el.offsetLeft
-    scrollLeft.current = el.scrollLeft
-    el.style.cursor = 'grabbing'
-    el.style.userSelect = 'none'
-  }
-
-  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging.current || !scrollContainerRef.current) return
-    e.preventDefault()
-    const el = scrollContainerRef.current
-    const x = e.pageX - el.offsetLeft
-    const walk = (x - startX.current) * 1.5
-    if (Math.abs(walk) > 3) wasDragging.current = true
-    el.scrollLeft = scrollLeft.current - walk
-  }
-
-  const onMouseUp = () => {
-    isDragging.current = false
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.style.cursor = 'grab'
-      scrollContainerRef.current.style.userSelect = ''
-    }
-  }
-
-  const onMouseLeave = () => {
-    if (isDragging.current) onMouseUp()
-  }
-
   const filteredProducts = useMemo(() => {
     return danhSachSanPham.filter((sp) => {
       const matchesCategory = activeCategoryId === "all" || sp.serviceCategory?._id === activeCategoryId
@@ -67,10 +28,15 @@ export function ProductListContent({ danhSachSanPham, danhSachDanhMuc, lang, dic
       return matchesCategory && matchesSearch
     })
   }, [activeCategoryId, searchQuery, danhSachSanPham])
+  const filterItems: CatalogFilterItem[] = [
+    { id: "all", label: lang === "vi" ? "Tất cả" : "All" },
+    ...danhSachDanhMuc.map((category) => ({ id: category._id, label: category.title })),
+  ]
+
 
   return (
     <div className="container mx-auto px-4">
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pt-4 pb-6 md:pb-8 -mx-4 px-4 md:mx-0 md:px-0 mb-4">
+      <div className="sticky top-0 z-40 -mx-4 mb-4 bg-background/95 px-4 pb-4 pt-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:mx-0 md:px-0">
         <div className="flex flex-col gap-4">
           <div className="relative w-full max-w-md mx-auto md:mx-0">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -89,41 +55,12 @@ export function ProductListContent({ danhSachSanPham, danhSachDanhMuc, lang, dic
               </button>
             )}
           </div>
-
-          <div className="relative">
-            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none md:hidden" />
-            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none md:hidden" />
-
-            <div
-              ref={scrollContainerRef}
-              data-swipe-zone="horizontal"
-              className="flex overflow-x-auto pb-1 gap-2 scrollbar-hide snap-x cursor-grab select-none"
-              onMouseDown={onMouseDown}
-              onMouseMove={onMouseMove}
-              onMouseUp={onMouseUp}
-              onMouseLeave={onMouseLeave}
-            >
-              <button
-                onClick={() => { if (!wasDragging.current) setActiveCategoryId("all") }}
-                className={`flex-shrink-0 px-5 py-2 rounded-full text-[13px] font-medium transition-all snap-start border ${activeCategoryId === "all" ? "bg-[#f97316] text-white border-[#f97316] shadow-lg shadow-[#f97316]/20" : "bg-card text-muted-foreground border-border hover:border-[#f97316]/30"}`}
-              >
-                {lang === 'vi' ? 'Tất cả' : 'All'}
-              </button>
-
-              {danhSachDanhMuc.map((dm) => (
-                <button
-                  key={dm._id}
-                  onClick={() => { if (!wasDragging.current) setActiveCategoryId(dm._id) }}
-                  className={`flex-shrink-0 px-5 py-2 rounded-full text-[13px] font-medium transition-all snap-start border ${activeCategoryId === dm._id ? "bg-[#f97316] text-white border-[#f97316] shadow-lg shadow-[#f97316]/20" : "bg-card text-muted-foreground border-border hover:border-[#f97316]/30"}`}
-                >
-                  {dm.title}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
 
+      <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-start lg:gap-6">
+        <CatalogSidebar items={filterItems} activeId={activeCategoryId} onChange={setActiveCategoryId} ariaLabel={dict.navigation?.products} />
+        <div className="min-w-0 flex-1">
       <AnimatePresence mode="wait">
         {filteredProducts.length === 0 ? (
           <motion.div key="empty" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="col-span-full text-center py-20 bg-card/50 rounded-3xl border border-dashed border-border">
@@ -183,6 +120,8 @@ export function ProductListContent({ danhSachSanPham, danhSachDanhMuc, lang, dic
           </motion.div>
         )}
       </AnimatePresence>
+        </div>
+      </div>
     </div>
   )
 }

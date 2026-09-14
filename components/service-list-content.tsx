@@ -7,6 +7,7 @@ import { DynamicIcon } from "./ui/dynamic-icon"
 import { FallbackBadge } from "./fallback-badge"
 import { SmartPrefetchLink } from "./smart-prefetch-link"
 import { cn } from "@/lib/utils"
+import { CatalogSidebar, type CatalogFilterItem } from "./catalog-sidebar"
 
 interface ServiceListContentProps {
   danhSachDichVu: any[]
@@ -40,26 +41,24 @@ export function ServiceListContent({ danhSachDichVu, lang, dict }: ServiceListCo
 
   const filteredServices = useMemo(() => {
     if (!activeTag) return danhSachDichVu
-    return danhSachDichVu.filter((service) => Array.isArray(service.tags) && service.tags.includes(activeTag))
+    return danhSachDichVu.filter((service) => Array.isArray(service.tags) && service.tags.some((tag: unknown) => typeof tag === "string" && tag.trim() === activeTag))
   }, [activeTag, danhSachDichVu])
 
-  const filterButtonClass = (active: boolean) => cn(
-    "min-h-11 shrink-0 snap-start rounded-full border px-4 py-2 text-sm font-semibold transition-all",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-    active ? "border-primary bg-primary text-primary-foreground shadow-brand" : "border-border/70 bg-card/80 text-muted-foreground hover:border-primary/35 hover:text-foreground"
-  )
+  const filterItems: CatalogFilterItem[] = [
+    { id: "all", label: copy.all },
+    ...allTags.map((tag) => ({ id: tag, label: tag })),
+  ]
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-      {allTags.length > 0 && (
-        <div className="sticky top-0 z-40 -mx-4 mb-8 border-b border-border/50 bg-background/90 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:relative lg:mx-0 lg:mb-10 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
-          <div className="flex snap-x gap-2 overflow-x-auto pb-1 no-scrollbar lg:flex-wrap lg:overflow-visible lg:pb-0">
-            <button type="button" onClick={() => setActiveTag(null)} aria-pressed={activeTag === null} className={filterButtonClass(activeTag === null)}>{copy.all}</button>
-            {allTags.map((tag) => <button key={tag} type="button" onClick={() => setActiveTag(tag)} aria-pressed={activeTag === tag} className={filterButtonClass(activeTag === tag)}>{tag}</button>)}
-          </div>
-        </div>
-      )}
-
+      <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-start lg:gap-6">
+        <CatalogSidebar
+          items={filterItems}
+          activeId={activeTag || "all"}
+          onChange={(id) => setActiveTag(id === "all" ? null : id)}
+          ariaLabel={dict.navigation?.services}
+        />
+        <div className="min-w-0 flex-1">
       <motion.div layout={!shouldReduceMotion} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
         <AnimatePresence mode="popLayout" initial={false}>
           {filteredServices.map((service: any, index: number) => (
@@ -81,13 +80,14 @@ export function ServiceListContent({ danhSachDichVu, lang, dict }: ServiceListCo
           ))}
         </AnimatePresence>
       </motion.div>
-
       {filteredServices.length === 0 && (
         <div className="rounded-[var(--radius-card)] border border-dashed border-border bg-card/50 px-6 py-14 text-center">
           <p className="text-base font-medium text-foreground">{dict.services?.no_results || copy.empty}</p>
           <button type="button" onClick={() => setActiveTag(null)} className="mt-4 min-h-11 rounded-full border border-primary/30 px-4 py-2 text-sm font-semibold text-primary">{copy.all}</button>
         </div>
       )}
+        </div>
+      </div>
     </div>
   )
 }

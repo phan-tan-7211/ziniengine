@@ -1,11 +1,12 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { ArrowRight, Eye } from "lucide-react"
 import Image from "next/image"
 import { FallbackBadge } from "./fallback-badge"
 import { SmartPrefetchLink } from "./smart-prefetch-link"
+import { CatalogSidebar, type CatalogFilterItem } from "./catalog-sidebar"
 
 interface ThongTinDanhMuc { _id: string; title: string }
 interface ThongTinDuAn { _id: string; title: string; client?: string; description?: string; slug: string; language: string; image?: { url: string }; categoryIdentifier?: string }
@@ -21,56 +22,20 @@ const localCopy: Record<string, { all: string; empty: string }> = {
 
 export function PortfolioListContent({ projects, categories, lang, dict }: PortfolioListContentProps) {
   const [activeCategoryId, setActiveCategoryId] = useState("all")
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const shouldReduceMotion = useReducedMotion()
   const copy = localCopy[lang] || localCopy.en
-  const isDragging = useRef(false)
-  const wasDragging = useRef(false)
-  const startX = useRef(0)
-  const startScrollLeft = useRef(0)
-
-  const onMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
-    const el = scrollContainerRef.current
-    if (!el) return
-    isDragging.current = true
-    wasDragging.current = false
-    startX.current = event.pageX - el.offsetLeft
-    startScrollLeft.current = el.scrollLeft
-    el.style.cursor = "grabbing"
-    el.style.userSelect = "none"
-  }
-
-  const onMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging.current || !scrollContainerRef.current) return
-    event.preventDefault()
-    const el = scrollContainerRef.current
-    const walk = (event.pageX - el.offsetLeft - startX.current) * 1.35
-    if (Math.abs(walk) > 4) wasDragging.current = true
-    el.scrollLeft = startScrollLeft.current - walk
-  }
-
-  const stopDragging = () => {
-    isDragging.current = false
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.style.cursor = "grab"
-      scrollContainerRef.current.style.userSelect = ""
-    }
-  }
-
   const filteredProjects = useMemo(() => activeCategoryId === "all" ? projects : projects.filter((project) => project.categoryIdentifier === activeCategoryId), [activeCategoryId, projects])
   const allLabel = dict.portfolio?.all_projects || copy.all
+  const filterItems: CatalogFilterItem[] = [
+    { id: "all", label: allLabel },
+    ...categories.map((category) => ({ id: category._id, label: category.title })),
+  ]
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="sticky top-0 z-40 -mx-4 mb-8 border-b border-border/40 bg-background/92 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:px-6 md:relative md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none lg:-mx-0">
-        <div className="relative">
-          <div ref={scrollContainerRef} data-swipe-zone="horizontal" className="flex cursor-grab snap-x gap-2 overflow-x-auto pb-1 no-scrollbar" onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={stopDragging} onMouseLeave={() => isDragging.current && stopDragging()}>
-            <button type="button" onClick={() => !wasDragging.current && setActiveCategoryId("all")} aria-pressed={activeCategoryId === "all"} className={`min-h-11 flex-shrink-0 snap-start rounded-full border px-5 py-2 text-sm font-semibold transition-all ${activeCategoryId === "all" ? "border-primary bg-primary text-primary-foreground shadow-brand" : "border-border bg-card text-muted-foreground"}`}>{allLabel}</button>
-            {categories.map((category) => <button key={category._id} type="button" onClick={() => !wasDragging.current && setActiveCategoryId(category._id)} aria-pressed={activeCategoryId === category._id} className={`min-h-11 flex-shrink-0 snap-start rounded-full border px-5 py-2 text-sm font-semibold transition-all ${activeCategoryId === category._id ? "border-primary bg-primary text-primary-foreground shadow-brand" : "border-border bg-card text-muted-foreground"}`}>{category.title}</button>)}
-          </div>
-        </div>
-      </div>
-
+      <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-start lg:gap-6">
+        <CatalogSidebar items={filterItems} activeId={activeCategoryId} onChange={setActiveCategoryId} ariaLabel={dict.navigation?.projects} />
+        <div className="min-w-0 flex-1">
       <motion.div layout className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <AnimatePresence mode="popLayout">
           {filteredProjects.map((project) => (
@@ -91,8 +56,9 @@ export function PortfolioListContent({ projects, categories, lang, dict }: Portf
           ))}
         </AnimatePresence>
       </motion.div>
-
       {filteredProjects.length === 0 && <div className="rounded-[var(--radius-card)] border border-dashed border-border bg-card/50 px-6 py-14 text-center"><p className="font-serif text-xl font-bold text-foreground">{dict.portfolio?.empty_title || copy.empty}</p><button type="button" onClick={() => setActiveCategoryId("all")} className="mt-4 min-h-11 rounded-xl px-4 py-2 text-sm font-semibold text-primary">{allLabel}</button></div>}
+        </div>
+      </div>
     </div>
   )
 }
