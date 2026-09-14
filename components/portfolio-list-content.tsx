@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { ArrowRight, Eye } from "lucide-react"
 import Image from "next/image"
@@ -56,6 +56,13 @@ export function PortfolioListContent({ projects, categories, lang, dict }: Portf
       scrollContainerRef.current.style.userSelect = ""
     }
   }
+
+  useEffect(() => {
+    const categoryFromUrl = new URLSearchParams(window.location.search).get("category")
+    if (categoryFromUrl && categories.some((category) => category._id === categoryFromUrl)) {
+      setActiveCategoryId(categoryFromUrl)
+    }
+  }, [categories])
 
   const filteredProjects = useMemo(() => activeCategoryId === "all" ? projects : projects.filter((project) => project.categoryIdentifier === activeCategoryId), [activeCategoryId, projects])
   const allLabel = dict.portfolio?.all_projects || copy.all
