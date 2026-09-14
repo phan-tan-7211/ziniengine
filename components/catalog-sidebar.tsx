@@ -73,7 +73,7 @@ export function CatalogSidebar({ items, activeId, onChange, ariaLabel = "Filters
         </div>
       </aside>
 
-      <div className="mb-6 lg:hidden">
+      <div className="mb-6 w-full lg:hidden">
         <nav
           data-swipe-zone="horizontal"
           className="grid max-h-64 grid-cols-1 gap-2 overflow-y-auto pr-1"
