@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronRight, ListFilter } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export interface CatalogFilterItem {
@@ -12,9 +12,10 @@ interface CatalogSidebarProps {
   items: CatalogFilterItem[]
   activeId: string
   onChange: (id: string) => void
+  ariaLabel?: string
 }
 
-export function CatalogSidebar({ items, activeId, onChange }: CatalogSidebarProps) {
+export function CatalogSidebar({ items, activeId, onChange, ariaLabel = "Filters" }: CatalogSidebarProps) {
   const buttonClass = (active: boolean, mobile = false) =>
     cn(
       "flex min-h-11 items-center gap-2 rounded-xl border text-left text-xs font-semibold transition-colors",
@@ -64,13 +65,9 @@ export function CatalogSidebar({ items, activeId, onChange }: CatalogSidebarProp
 
   return (
     <>
-      <aside className="hidden w-56 shrink-0 lg:block" aria-label="Catalog filters">
+      <aside className="hidden w-56 shrink-0 lg:block" aria-label={ariaLabel}>
         <div className="sticky top-24 rounded-2xl border border-border/70 bg-card/95 p-2 shadow-card backdrop-blur-xl">
-          <div className="flex items-center gap-2 px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            <ListFilter className="size-3.5 text-primary" aria-hidden="true" />
-            <span>Filter</span>
-          </div>
-          <nav className="space-y-1" aria-label="Catalog filters">
+          <nav className="space-y-1" aria-label={ariaLabel}>
             {renderItems()}
           </nav>
         </div>
@@ -82,7 +79,7 @@ export function CatalogSidebar({ items, activeId, onChange }: CatalogSidebarProp
         <nav
           data-swipe-zone="horizontal"
           className="flex snap-x gap-2 overflow-x-auto px-4 pb-1 no-scrollbar"
-          aria-label="Catalog filters"
+          aria-label={ariaLabel}
         >
           {renderItems(true)}
         </nav>
