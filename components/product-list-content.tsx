@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useMemo, useRef } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import Image from "next/image"
 import { ArrowRight, HardHat, Camera, Search, X } from "lucide-react"
 import { FallbackBadge } from "./fallback-badge"
@@ -57,6 +57,13 @@ export function ProductListContent({ danhSachSanPham, danhSachDanhMuc, lang, dic
   const onMouseLeave = () => {
     if (isDragging.current) onMouseUp()
   }
+
+  useEffect(() => {
+    const categoryFromUrl = new URLSearchParams(window.location.search).get("category")
+    if (categoryFromUrl && danhSachDanhMuc.some((category) => category._id === categoryFromUrl)) {
+      setActiveCategoryId(categoryFromUrl)
+    }
+  }, [danhSachDanhMuc])
 
   const filteredProducts = useMemo(() => {
     return danhSachSanPham.filter((sp) => {
