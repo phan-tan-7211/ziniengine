@@ -62,6 +62,7 @@ export function ServiceListContent({ danhSachDichVu, lang, dict }: ServiceListCo
           items={filterItems}
           activeId={activeTag || "all"}
           onChange={(id) => setActiveTag(id === "all" ? null : id)}
+          ariaLabel={dict.navigation?.services}
         />
         <div className="min-w-0 flex-1">
       <motion.div layout={!shouldReduceMotion} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
