@@ -20,7 +20,7 @@ export function CatalogSidebar({ items, activeId, onChange, ariaLabel = "Filters
     cn(
       "flex min-h-11 items-center gap-2 rounded-xl border text-left text-xs font-semibold transition-colors",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-      mobile ? "w-full px-3 py-2" : "w-full px-3",
+      mobile ? "shrink-0 snap-start rounded-full px-4 py-2" : "w-full px-3",
       active
         ? "border-primary bg-primary text-primary-foreground shadow-brand"
         : "border-border/70 bg-card text-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-primary",
@@ -47,7 +47,7 @@ export function CatalogSidebar({ items, activeId, onChange, ariaLabel = "Filters
               aria-hidden="true"
             />
           )}
-          <span className={cn("min-w-0", "line-clamp-2 leading-4")}>
+          <span className={cn("min-w-0", mobile ? "truncate" : "line-clamp-2 leading-4")}>
             {item.label}
           </span>
           {!mobile && (
@@ -73,10 +73,12 @@ export function CatalogSidebar({ items, activeId, onChange, ariaLabel = "Filters
         </div>
       </aside>
 
-      <div className="mb-6 w-full lg:hidden">
+      <div className="relative -mx-4 mb-6 lg:hidden">
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-background to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-background to-transparent" />
         <nav
           data-swipe-zone="horizontal"
-          className="grid max-h-64 grid-cols-1 gap-2 overflow-y-auto pr-1"
+          className="flex snap-x gap-2 overflow-x-auto px-4 pb-1 no-scrollbar"
           aria-label={ariaLabel}
         >
           {renderItems(true)}
