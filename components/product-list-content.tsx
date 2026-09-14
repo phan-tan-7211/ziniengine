@@ -100,7 +100,7 @@ export function ProductListContent({ danhSachSanPham, danhSachDanhMuc, lang, dic
       </div>
 
       <div className="flex items-start gap-4 lg:gap-6">
-        <CatalogSidebar items={filterItems} activeId={activeCategoryId} onChange={setActiveCategoryId} />
+        <CatalogSidebar items={filterItems} activeId={activeCategoryId} onChange={setActiveCategoryId} ariaLabel={dict.navigation?.products} />
         <div className="min-w-0 flex-1">
       <AnimatePresence mode="wait">
         {filteredProducts.length === 0 ? (
