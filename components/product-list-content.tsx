@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useMemo, useRef } from "react"
+import { useState, useMemo } from "react"
 import Image from "next/image"
 import { ArrowRight, HardHat, Camera, Search, X } from "lucide-react"
 import { FallbackBadge } from "./fallback-badge"
@@ -20,46 +20,6 @@ interface ProductListContentProps {
 export function ProductListContent({ danhSachSanPham, danhSachDanhMuc, lang, dict, emptyMessage }: ProductListContentProps) {
   const [activeCategoryId, setActiveCategoryId] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-
-  const isDragging = useRef(false)
-  const wasDragging = useRef(false)
-  const startX = useRef(0)
-  const scrollLeft = useRef(0)
-
-  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = scrollContainerRef.current
-    if (!el) return
-    isDragging.current = true
-    wasDragging.current = false
-    startX.current = e.pageX - el.offsetLeft
-    scrollLeft.current = el.scrollLeft
-    el.style.cursor = 'grabbing'
-    el.style.userSelect = 'none'
-  }
-
-  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging.current || !scrollContainerRef.current) return
-    e.preventDefault()
-    const el = scrollContainerRef.current
-    const x = e.pageX - el.offsetLeft
-    const walk = (x - startX.current) * 1.5
-    if (Math.abs(walk) > 3) wasDragging.current = true
-    el.scrollLeft = scrollLeft.current - walk
-  }
-
-  const onMouseUp = () => {
-    isDragging.current = false
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.style.cursor = 'grab'
-      scrollContainerRef.current.style.userSelect = ''
-    }
-  }
-
-  const onMouseLeave = () => {
-    if (isDragging.current) onMouseUp()
-  }
-
   const filteredProducts = useMemo(() => {
     return danhSachSanPham.filter((sp) => {
       const matchesCategory = activeCategoryId === "all" || sp.serviceCategory?._id === activeCategoryId
