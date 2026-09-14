@@ -23,6 +23,7 @@ const localCopy: Record<string, { all: string; empty: string }> = {
 export function PortfolioListContent({ projects, categories, lang, dict }: PortfolioListContentProps) {
   const [activeCategoryId, setActiveCategoryId] = useState("all")
   const shouldReduceMotion = useReducedMotion()
+  const copy = localCopy[lang] || localCopy.en
   const filteredProjects = useMemo(() => activeCategoryId === "all" ? projects : projects.filter((project) => project.categoryIdentifier === activeCategoryId), [activeCategoryId, projects])
   const allLabel = dict.portfolio?.all_projects || copy.all
   const filterItems: CatalogFilterItem[] = [
