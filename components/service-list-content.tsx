@@ -41,7 +41,7 @@ export function ServiceListContent({ danhSachDichVu, lang, dict }: ServiceListCo
 
   const filteredServices = useMemo(() => {
     if (!activeTag) return danhSachDichVu
-    return danhSachDichVu.filter((service) => Array.isArray(service.tags) && service.tags.includes(activeTag))
+    return danhSachDichVu.filter((service) => Array.isArray(service.tags) && service.tags.some((tag: unknown) => typeof tag === "string" && tag.trim() === activeTag))
   }, [activeTag, danhSachDichVu])
 
   const filterItems: CatalogFilterItem[] = [
