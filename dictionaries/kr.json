@@ -16,6 +16,7 @@
     "description": "수년 동안 ZINITEK과 함께해온 파트너사들의 소중한 평가입니다.",
     "trusted_by": "선도적인 글로벌 기업들이 신뢰하는 기업"
   },
+  "catalog_sidebar": {"title":"카테고리","viewAll":"전체 보기"},
   "navigation": {
     "home": "홈",
     "about": "회사 소개",
