@@ -44,12 +44,6 @@ export function ServiceListContent({ danhSachDichVu, lang, dict }: ServiceListCo
     return danhSachDichVu.filter((service) => Array.isArray(service.tags) && service.tags.includes(activeTag))
   }, [activeTag, danhSachDichVu])
 
-  const filterButtonClass = (active: boolean) => cn(
-    "min-h-11 shrink-0 snap-start rounded-full border px-4 py-2 text-sm font-semibold transition-all",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-    active ? "border-primary bg-primary text-primary-foreground shadow-brand" : "border-border/70 bg-card/80 text-muted-foreground hover:border-primary/35 hover:text-foreground"
-  )
-
   const filterItems: CatalogFilterItem[] = [
     { id: "all", label: copy.all },
     ...allTags.map((tag) => ({ id: tag, label: tag })),
