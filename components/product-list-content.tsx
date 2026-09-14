@@ -158,6 +158,9 @@ export function ProductListContent({ danhSachSanPham, danhSachDanhMuc, lang, dic
                 </motion.div>
               ))}
             </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
         </div>
       </div>
     </div>
