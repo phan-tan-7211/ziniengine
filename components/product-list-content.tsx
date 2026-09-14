@@ -14,10 +14,9 @@ interface ProductListContentProps {
   danhSachDanhMuc: any[]
   lang: string
   dict: any
-  emptyMessage?: string
 }
 
-export function ProductListContent({ danhSachSanPham, danhSachDanhMuc, lang, dict, emptyMessage }: ProductListContentProps) {
+export function ProductListContent({ danhSachSanPham, danhSachDanhMuc, lang, dict }: ProductListContentProps) {
   const [activeCategoryId, setActiveCategoryId] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const filteredProducts = useMemo(() => {
@@ -66,7 +65,7 @@ export function ProductListContent({ danhSachSanPham, danhSachDanhMuc, lang, dic
         {filteredProducts.length === 0 ? (
           <motion.div key="empty" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="col-span-full text-center py-20 bg-card/50 rounded-3xl border border-dashed border-border">
             <HardHat className="mx-auto w-12 h-12 mb-4 text-[#334155] opacity-20" />
-            <p className="text-muted-foreground font-medium">{emptyMessage || (lang === 'vi' ? 'Không tìm thấy sản phẩm phù hợp.' : 'No matching products found.')}</p>
+            <p className="text-muted-foreground font-medium">{lang === 'vi' ? 'Không tìm thấy sản phẩm phù hợp.' : 'No matching products found.'}</p>
             <button onClick={() => { setActiveCategoryId("all"); setSearchQuery("") }} className="mt-4 px-5 py-2 rounded-full text-sm font-medium bg-[#f97316]/10 text-[#f97316] hover:bg-[#f97316]/20 transition-colors">
               {lang === 'vi' ? 'Xóa bộ lọc' : 'Clear filters'}
             </button>
