@@ -7,15 +7,17 @@ import { ArrowRight, HardHat, Camera, Search, X } from "lucide-react"
 import { FallbackBadge } from "./fallback-badge"
 import { SmartPrefetchLink } from "./smart-prefetch-link"
 import { motion, AnimatePresence } from "framer-motion"
+import { CatalogSidebar, type CatalogFilterItem } from "./catalog-sidebar"
 
 interface ProductListContentProps {
   danhSachSanPham: any[]
   danhSachDanhMuc: any[]
   lang: string
   dict: any
+  emptyMessage?: string
 }
 
-export function ProductListContent({ danhSachSanPham, danhSachDanhMuc, lang, dict }: ProductListContentProps) {
+export function ProductListContent({ danhSachSanPham, danhSachDanhMuc, lang, dict, emptyMessage }: ProductListContentProps) {
   const [activeCategoryId, setActiveCategoryId] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -67,10 +69,15 @@ export function ProductListContent({ danhSachSanPham, danhSachDanhMuc, lang, dic
       return matchesCategory && matchesSearch
     })
   }, [activeCategoryId, searchQuery, danhSachSanPham])
+  const filterItems: CatalogFilterItem[] = [
+    { id: "all", label: lang === "vi" ? "Tất cả" : "All" },
+    ...danhSachDanhMuc.map((category) => ({ id: category._id, label: category.title })),
+  ]
+
 
   return (
     <div className="container mx-auto px-4">
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pt-4 pb-6 md:pb-8 -mx-4 px-4 md:mx-0 md:px-0 mb-4">
+      <div className="sticky top-0 z-40 -mx-4 mb-4 bg-background/95 px-4 pb-4 pt-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:mx-0 md:px-0">
         <div className="flex flex-col gap-4">
           <div className="relative w-full max-w-md mx-auto md:mx-0">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -89,46 +96,17 @@ export function ProductListContent({ danhSachSanPham, danhSachDanhMuc, lang, dic
               </button>
             )}
           </div>
-
-          <div className="relative">
-            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none md:hidden" />
-            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none md:hidden" />
-
-            <div
-              ref={scrollContainerRef}
-              data-swipe-zone="horizontal"
-              className="flex overflow-x-auto pb-1 gap-2 scrollbar-hide snap-x cursor-grab select-none"
-              onMouseDown={onMouseDown}
-              onMouseMove={onMouseMove}
-              onMouseUp={onMouseUp}
-              onMouseLeave={onMouseLeave}
-            >
-              <button
-                onClick={() => { if (!wasDragging.current) setActiveCategoryId("all") }}
-                className={`flex-shrink-0 px-5 py-2 rounded-full text-[13px] font-medium transition-all snap-start border ${activeCategoryId === "all" ? "bg-[#f97316] text-white border-[#f97316] shadow-lg shadow-[#f97316]/20" : "bg-card text-muted-foreground border-border hover:border-[#f97316]/30"}`}
-              >
-                {lang === 'vi' ? 'Tất cả' : 'All'}
-              </button>
-
-              {danhSachDanhMuc.map((dm) => (
-                <button
-                  key={dm._id}
-                  onClick={() => { if (!wasDragging.current) setActiveCategoryId(dm._id) }}
-                  className={`flex-shrink-0 px-5 py-2 rounded-full text-[13px] font-medium transition-all snap-start border ${activeCategoryId === dm._id ? "bg-[#f97316] text-white border-[#f97316] shadow-lg shadow-[#f97316]/20" : "bg-card text-muted-foreground border-border hover:border-[#f97316]/30"}`}
-                >
-                  {dm.title}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
 
+      <div className="flex items-start gap-4 lg:gap-6">
+        <CatalogSidebar items={filterItems} activeId={activeCategoryId} onChange={setActiveCategoryId} />
+        <div className="min-w-0 flex-1">
       <AnimatePresence mode="wait">
         {filteredProducts.length === 0 ? (
           <motion.div key="empty" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="col-span-full text-center py-20 bg-card/50 rounded-3xl border border-dashed border-border">
             <HardHat className="mx-auto w-12 h-12 mb-4 text-[#334155] opacity-20" />
-            <p className="text-muted-foreground font-medium">{lang === 'vi' ? 'Không tìm thấy sản phẩm phù hợp.' : 'No matching products found.'}</p>
+            <p className="text-muted-foreground font-medium">{emptyMessage || (lang === 'vi' ? 'Không tìm thấy sản phẩm phù hợp.' : 'No matching products found.')}</p>
             <button onClick={() => { setActiveCategoryId("all"); setSearchQuery("") }} className="mt-4 px-5 py-2 rounded-full text-sm font-medium bg-[#f97316]/10 text-[#f97316] hover:bg-[#f97316]/20 transition-colors">
               {lang === 'vi' ? 'Xóa bộ lọc' : 'Clear filters'}
             </button>
@@ -180,9 +158,8 @@ export function ProductListContent({ danhSachSanPham, danhSachDanhMuc, lang, dic
                 </motion.div>
               ))}
             </AnimatePresence>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      </div>
     </div>
   )
 }
