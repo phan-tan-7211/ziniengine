@@ -1,89 +1,92 @@
-import Link from "next/link"
-import { ChevronRight, Settings2 } from "lucide-react"
+"use client"
+
+import { ChevronRight, ListFilter } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-type ServiceItem = {
-  slug?: string
-  title?: string
-  tags?: string[]
+export interface CatalogFilterItem {
+  id: string
+  label: string
 }
 
 interface CatalogSidebarProps {
-  lang: string
-  dict: any
-  serviceItems?: ServiceItem[]
+  items: CatalogFilterItem[]
+  activeId: string
+  onChange: (id: string) => void
 }
 
-export function CatalogSidebar({ lang, dict, serviceItems = [] }: CatalogSidebarProps) {
-  const services = serviceItems.filter(
-    (item): item is ServiceItem & { slug: string; title: string } =>
-      Boolean(item.slug && item.title),
-  )
+export function CatalogSidebar({ items, activeId, onChange }: CatalogSidebarProps) {
+  const buttonClass = (active: boolean, mobile = false) =>
+    cn(
+      "flex min-h-11 items-center gap-2 rounded-xl border text-left text-xs font-semibold transition-colors",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+      mobile ? "shrink-0 snap-start rounded-full px-4 py-2" : "w-full px-3",
+      active
+        ? "border-primary bg-primary text-primary-foreground shadow-brand"
+        : "border-border/70 bg-card text-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-primary",
+    )
+
+  const renderItems = (mobile = false) =>
+    items.map((item) => {
+      const active = activeId === item.id
+
+      return (
+        <button
+          key={item.id}
+          type="button"
+          aria-pressed={active}
+          onClick={() => onChange(item.id)}
+          className={buttonClass(active, mobile)}
+        >
+          {!mobile && (
+            <span
+              className={cn(
+                "size-1.5 shrink-0 rounded-full",
+                active ? "bg-primary-foreground" : "bg-primary/50",
+              )}
+              aria-hidden="true"
+            />
+          )}
+          <span className={cn("min-w-0", mobile ? "truncate" : "line-clamp-2 leading-4")}>
+            {item.label}
+          </span>
+          {!mobile && (
+            <ChevronRight
+              className={cn(
+                "ml-auto size-4 shrink-0",
+                active ? "text-primary-foreground" : "text-muted-foreground",
+              )}
+              aria-hidden="true"
+            />
+          )}
+        </button>
+      )
+    })
 
   return (
-    <aside
-      aria-label={dict.catalog_sidebar?.title || dict.navigation?.services || "Technical Services"}
-      className="hidden w-56 shrink-0 lg:block"
-    >
-      <div className="sticky top-24 rounded-2xl border border-border/70 bg-card/95 p-2 shadow-card backdrop-blur-xl">
-        <div className="px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-          {dict.catalog_sidebar?.title || dict.navigation?.services || "Technical Services"}
+    <>
+      <aside className="hidden w-56 shrink-0 lg:block" aria-label="Catalog filters">
+        <div className="sticky top-24 rounded-2xl border border-border/70 bg-card/95 p-2 shadow-card backdrop-blur-xl">
+          <div className="flex items-center gap-2 px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            <ListFilter className="size-3.5 text-primary" aria-hidden="true" />
+            <span>Filter</span>
+          </div>
+          <nav className="space-y-1" aria-label="Catalog filters">
+            {renderItems()}
+          </nav>
         </div>
+      </aside>
 
+      <div className="relative -mx-4 mb-6 lg:hidden">
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-background to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-background to-transparent" />
         <nav
-          className="space-y-1"
-          aria-label={dict.catalog_sidebar?.title || dict.navigation?.services || "Technical Services"}
+          data-swipe-zone="horizontal"
+          className="flex snap-x gap-2 overflow-x-auto px-4 pb-1 no-scrollbar"
+          aria-label="Catalog filters"
         >
-          {services.map((service) => {
-            const serviceHref = "/" + lang + "/services/" + service.slug
-            const tags = Array.isArray(service.tags)
-              ? service.tags.filter((tag): tag is string => typeof tag === "string" && Boolean(tag.trim()))
-              : []
-
-            return (
-              <div key={service.slug} className="group relative">
-                <Link
-                  href={serviceHref}
-                  className={cn(
-                    "flex min-h-12 items-center gap-2 rounded-xl px-2.5 text-xs font-semibold text-foreground transition-colors",
-                    "hover:bg-primary/10 hover:text-primary",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card",
-                  )}
-                >
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-secondary/60 text-primary">
-                    <Settings2 className="size-4" aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0 flex-1 line-clamp-2 leading-4">{service.title}</span>
-                  {tags.length > 0 && (
-                    <ChevronRight
-                      className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5 group-focus-within:translate-x-0.5"
-                      aria-hidden="true"
-                    />
-                  )}
-                </Link>
-
-                {tags.length > 0 && (
-                  <div className="pointer-events-none invisible absolute left-full top-0 z-[70] ml-2 w-72 translate-x-1 rounded-2xl border border-border/70 bg-card p-2 opacity-0 shadow-2xl transition-all duration-200 group-hover:pointer-events-auto group-hover:visible group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:translate-x-0 group-focus-within:opacity-100">
-                    <div className="border-b border-border/60 px-3 pb-2 pt-1 text-xs font-bold text-foreground">
-                      {service.title}
-                    </div>
-                    <div className="mt-1 flex flex-wrap gap-1.5 px-1 pt-1">
-                      {tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1.5 text-[11px] leading-4 text-muted-foreground"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
+          {renderItems(true)}
         </nav>
       </div>
-    </aside>
+    </>
   )
 }
