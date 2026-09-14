@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { ArrowRight, Eye } from "lucide-react"
 import Image from "next/image"
@@ -22,42 +22,6 @@ const localCopy: Record<string, { all: string; empty: string }> = {
 
 export function PortfolioListContent({ projects, categories, lang, dict }: PortfolioListContentProps) {
   const [activeCategoryId, setActiveCategoryId] = useState("all")
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const shouldReduceMotion = useReducedMotion()
-  const copy = localCopy[lang] || localCopy.en
-  const isDragging = useRef(false)
-  const wasDragging = useRef(false)
-  const startX = useRef(0)
-  const startScrollLeft = useRef(0)
-
-  const onMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
-    const el = scrollContainerRef.current
-    if (!el) return
-    isDragging.current = true
-    wasDragging.current = false
-    startX.current = event.pageX - el.offsetLeft
-    startScrollLeft.current = el.scrollLeft
-    el.style.cursor = "grabbing"
-    el.style.userSelect = "none"
-  }
-
-  const onMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging.current || !scrollContainerRef.current) return
-    event.preventDefault()
-    const el = scrollContainerRef.current
-    const walk = (event.pageX - el.offsetLeft - startX.current) * 1.35
-    if (Math.abs(walk) > 4) wasDragging.current = true
-    el.scrollLeft = startScrollLeft.current - walk
-  }
-
-  const stopDragging = () => {
-    isDragging.current = false
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.style.cursor = "grab"
-      scrollContainerRef.current.style.userSelect = ""
-    }
-  }
-
   const filteredProjects = useMemo(() => activeCategoryId === "all" ? projects : projects.filter((project) => project.categoryIdentifier === activeCategoryId), [activeCategoryId, projects])
   const allLabel = dict.portfolio?.all_projects || copy.all
   const filterItems: CatalogFilterItem[] = [
