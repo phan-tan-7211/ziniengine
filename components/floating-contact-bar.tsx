@@ -10,6 +10,7 @@ export function FloatingContactBar() {
   const { phoneDisplay, phoneTel, zaloNumber, addressDisplay, googleMapsUrl } = useSiteSettings()
   const [showTop, setShowTop] = useState(false)
   const [nearFooter, setNearFooter] = useState(false)
+  const [isMobileLayout, setIsMobileLayout] = useState(false)
 
   useEffect(() => {
     let raf = 0
@@ -28,21 +29,23 @@ export function FloatingContactBar() {
       setShowTop(window.scrollY > 300)
 
       const footer = document.querySelector("footer") as HTMLElement | null
-      const isMobileLayout = window.innerWidth < 1280
+      const mobileLayout = window.innerWidth < 1280
       const rect = footer?.getBoundingClientRect()
-      const active = Boolean(isMobileLayout && rect && rect.top <= window.innerHeight - 12)
+      const active = Boolean(mobileLayout && rect && rect.top <= window.innerHeight - 12)
+      const docked = mobileLayout || active
 
       if (previousFooter && previousFooter !== footer) previousFooter.style.paddingBottom = ""
       previousFooter = footer
 
       if (footer) {
-        footer.style.paddingBottom = active
+        footer.style.paddingBottom = docked
           ? "calc(5.25rem + env(safe-area-inset-bottom))"
           : ""
       }
 
+      setIsMobileLayout(mobileLayout)
       setNearFooter(active)
-      publishDockState(active)
+      publishDockState(docked)
     }
 
     const schedule = () => {
@@ -68,13 +71,15 @@ export function FloatingContactBar() {
     window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" })
   }
 
-  const shellClass = nearFooter
+  const dockedLayout = isMobileLayout || nearFooter
+
+  const shellClass = dockedLayout
     ? "fixed bottom-0 left-1/2 z-50 flex -translate-x-1/2 flex-row overflow-visible rounded-t-xl border border-b-0 border-border bg-background shadow-lg transition-all duration-300 xl:bottom-auto xl:left-auto xl:right-0 xl:top-1/2 xl:-translate-x-0 xl:-translate-y-1/2 xl:flex-col xl:rounded-l-xl xl:rounded-r-none xl:border-r-0 xl:border-b"
     : "fixed right-0 top-1/2 z-50 flex -translate-y-1/2 flex-col overflow-visible rounded-l-xl border border-r-0 border-border bg-background shadow-lg transition-all duration-300"
 
-  const separatorClass = nearFooter ? "border-l border-border" : "border-t border-border"
+  const separatorClass = dockedLayout ? "border-l border-border" : "border-t border-border"
 
-  const expandClass = nearFooter
+  const expandClass = dockedLayout
     ? "absolute bottom-full left-[-1px] z-[-1] mb-0 flex h-12 min-w-[calc(100%+2px)] items-center justify-center whitespace-nowrap rounded-t-xl border px-5 text-sm font-bold text-white opacity-0 invisible translate-y-2 transition-all duration-300 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:visible group-focus-visible:translate-y-0 group-focus-visible:opacity-100 sm:h-14 sm:text-base"
     : "absolute right-full top-[-1px] z-[-1] flex h-[calc(100%+2px)] items-center whitespace-nowrap rounded-l-xl border px-6 text-sm font-bold text-white opacity-0 invisible translate-x-2 transition-all duration-300 group-hover:visible group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:visible group-focus-visible:translate-x-0 group-focus-visible:opacity-100 sm:text-base"
 
