@@ -1,22 +1,21 @@
 import { BlueprintBackground } from "@/components/blueprint-background"
-import { CatalogSidebar } from "@/components/catalog-sidebar"
 import { PortfolioListContent } from "@/components/portfolio-list-content"
 import { PageHeader } from "@/components/page-header"
 import { getDictionary } from "@/lib/get-dictionary-cached"
 import { getSiteName, withSiteName } from "@/lib/site-settings"
 import { sanityClient } from "@/lib/sanity-client"
 import { getPublicSiteUrl } from "@/lib/runtime-config"
-import { getLocalizedServiceCatalog, getPortfolioServiceCategories } from "@/lib/service-catalog"
+import { getPortfolioServiceCategories } from "@/lib/service-catalog"
 
 async function layDuLieuPortfolio(lang: string) {
   const projectQuery = `*[_type == "project" && defined(slug.current) && !(_id in path("drafts.**"))] { _id,_translationKey,title,client,description,"slug":slug.current,language,"image":mainImage.asset->{url},"categoryIdentifier":coalesce(serviceCategory->_translationKey,serviceCategory->_id) }`
-  const [rawProjects,categories,serviceItems]=await Promise.all([sanityClient.fetch(projectQuery),getPortfolioServiceCategories(lang),getLocalizedServiceCatalog(lang)])
+  const [rawProjects,categories]=await Promise.all([sanityClient.fetch(projectQuery),getPortfolioServiceCategories(lang)])
 
   const projectGroups:Record<string,any[]>={}
   rawProjects.forEach((project:any)=>{const key=project._translationKey||project._id;if(!projectGroups[key])projectGroups[key]=[];projectGroups[key].push(project)})
   const projects=Object.values(projectGroups).map((group:any[])=>group.find((item)=>item.language===lang)||group.find((item)=>item.language==="en")||group.find((item)=>item.language==="vi")||group[0])
 
-  return {projects,categories,serviceItems}
+  return {projects,categories}
 }
 
 export async function generateMetadata({params}:{params:Promise<{lang:string}>}){
@@ -32,5 +31,5 @@ export default async function PortfolioPage({params}:{params:Promise<{lang:strin
   const [dict,data,siteName]=await Promise.all([getDictionary(lang),layDuLieuPortfolio(lang),getSiteName()])
   const siteUrl=getPublicSiteUrl()
   const jsonLd={"@context":"https://schema.org","@type":"ItemList",name:dict.portfolio?.title||`${siteName} Projects`,description:dict.portfolio?.description,itemListElement:data.projects.map((project:any,index:number)=>({"@type":"ListItem",position:index+1,url:`${siteUrl}/${lang}/portfolio/${project.slug}`,name:project.title,description:project.description,image:project.image?.url}))}
-  return <main className="relative min-h-dvh bg-background text-foreground"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/><div className="pointer-events-none absolute inset-0 z-0 opacity-25 dark:opacity-45" aria-hidden="true"><BlueprintBackground/></div><div className="relative z-10"><PageHeader title={dict.portfolio?.title} description={dict.portfolio?.description} subtitle={dict.portfolio?.subtitle} lang={lang} dict={dict}/><section className="relative z-10 pb-24 sm:pb-28 lg:pb-32"><div className="mx-auto flex max-w-7xl items-start gap-4 lg:gap-6"><CatalogSidebar lang={lang} dict={dict} serviceItems={data.serviceItems}/><div className="min-w-0 flex-1"><PortfolioListContent projects={data.projects} categories={data.categories as any} lang={lang} dict={dict}/></div></div></section></div></main>
+  return <main className="relative min-h-dvh bg-background text-foreground"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/><div className="pointer-events-none absolute inset-0 z-0 opacity-25 dark:opacity-45" aria-hidden="true"><BlueprintBackground/></div><div className="relative z-10"><PageHeader title={dict.portfolio?.title} description={dict.portfolio?.description} subtitle={dict.portfolio?.subtitle} lang={lang} dict={dict}/><section className="relative z-10 pb-24 sm:pb-28 lg:pb-32"><PortfolioListContent projects={data.projects} categories={data.categories as any} lang={lang} dict={dict}/></section></div></main>
 }
