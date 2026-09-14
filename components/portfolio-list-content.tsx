@@ -33,7 +33,7 @@ export function PortfolioListContent({ projects, categories, lang, dict }: Portf
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex items-start gap-4 lg:gap-6">
+      <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-start lg:gap-6">
         <CatalogSidebar items={filterItems} activeId={activeCategoryId} onChange={setActiveCategoryId} ariaLabel={dict.navigation?.projects} />
         <div className="min-w-0 flex-1">
       <motion.div layout className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
